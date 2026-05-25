@@ -1,0 +1,624 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Porteiro — Quermesse 2025</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jsQR/1.4.0/jsQR.min.js"></script>
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --card: #141420;
+    --card2: #1c1c2e;
+    --borda: #2a2a40;
+    --texto: #f0efff;
+    --texto2: #8886aa;
+    --verde: #00c97a;
+    --verde-bg: #001a0f;
+    --vermelho: #ff4444;
+    --vermelho-bg: #1a0000;
+    --amarelo: #f59e0b;
+    --amarelo-bg: #1a1000;
+    --azul: #3b82f6;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  body { background: var(--bg); color: var(--texto); font-family: 'Segoe UI', sans-serif; min-height: 100vh; overflow-x: hidden; }
+
+  /* ── Login ── */
+  #tela-login {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 32px 24px;
+    background: radial-gradient(ellipse at center, #1a0030 0%, #0a0a0f 70%);
+  }
+  .login-icon { font-size: 64px; margin-bottom: 16px; }
+  .login-title { font-size: 28px; font-weight: 900; margin-bottom: 4px; }
+  .login-sub { font-size: 14px; color: var(--texto2); margin-bottom: 40px; }
+  .login-form { width: 100%; max-width: 320px; }
+  .login-form input {
+    width: 100%;
+    background: var(--card);
+    border: 2px solid var(--borda);
+    border-radius: 12px;
+    padding: 16px 20px;
+    color: var(--texto);
+    font-size: 24px;
+    letter-spacing: 8px;
+    text-align: center;
+    outline: none;
+    margin-bottom: 16px;
+    transition: border-color .2s;
+  }
+  .login-form input:focus { border-color: var(--azul); }
+  .btn-entrar {
+    width: 100%;
+    background: var(--azul);
+    color: #fff;
+    border: none;
+    border-radius: 12px;
+    padding: 16px;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: opacity .2s;
+  }
+  .btn-entrar:hover { opacity: .88; }
+  .login-erro { color: var(--vermelho); font-size: 13px; text-align: center; margin-top: 10px; display: none; }
+
+  /* ── App principal ── */
+  #tela-app { display: none; min-height: 100vh; flex-direction: column; }
+
+  /* Header */
+  .header {
+    background: var(--card);
+    border-bottom: 1px solid var(--borda);
+    padding: 14px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .header-left { display: flex; align-items: center; gap: 10px; }
+  .header-badge {
+    background: var(--verde);
+    color: #000;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 1px;
+    padding: 3px 8px;
+    border-radius: 99px;
+  }
+  .header-title { font-size: 16px; font-weight: 700; }
+  .btn-sair { background: none; border: 1px solid var(--borda); color: var(--texto2); border-radius: 8px; padding: 6px 12px; font-size: 12px; cursor: pointer; }
+
+  /* Contador */
+  .counters {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    padding: 16px;
+    background: var(--card2);
+    border-bottom: 1px solid var(--borda);
+  }
+  .counter {
+    background: var(--card);
+    border-radius: 10px;
+    padding: 12px 8px;
+    text-align: center;
+    border: 1px solid var(--borda);
+  }
+  .counter .num { font-size: 26px; font-weight: 900; line-height: 1; }
+  .counter .lbl { font-size: 10px; color: var(--texto2); margin-top: 4px; letter-spacing: .5px; text-transform: uppercase; }
+  .counter.verde .num { color: var(--verde); }
+  .counter.vermelho .num { color: var(--vermelho); }
+  .counter.amarelo .num { color: var(--amarelo); }
+
+  /* Scanner */
+  .scanner-wrap {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px 16px;
+  }
+  .scanner-box {
+    position: relative;
+    width: 100%;
+    max-width: 360px;
+    border-radius: 16px;
+    overflow: hidden;
+    background: #000;
+    aspect-ratio: 1;
+    border: 2px solid var(--borda);
+  }
+  #video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+  .scanner-overlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .scanner-frame {
+    width: 60%;
+    aspect-ratio: 1;
+    position: relative;
+  }
+  .scanner-frame::before, .scanner-frame::after,
+  .scanner-frame span::before, .scanner-frame span::after {
+    content: '';
+    position: absolute;
+    width: 24px;
+    height: 24px;
+    border-color: #fff;
+    border-style: solid;
+  }
+  .scanner-frame::before  { top: 0;    left: 0;   border-width: 3px 0 0 3px; border-radius: 4px 0 0 0; }
+  .scanner-frame::after   { top: 0;    right: 0;  border-width: 3px 3px 0 0; border-radius: 0 4px 0 0; }
+  .scanner-frame span::before { bottom: 0; left: 0;  border-width: 0 0 3px 3px; border-radius: 0 0 0 4px; }
+  .scanner-frame span::after  { bottom: 0; right: 0; border-width: 0 3px 3px 0; border-radius: 0 0 4px 0; }
+  .scanner-line {
+    position: absolute;
+    left: 10%;
+    right: 10%;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--verde), transparent);
+    animation: scan 2s linear infinite;
+    top: 10%;
+  }
+  @keyframes scan { 0% { top: 10%; } 100% { top: 90%; } }
+
+  .scanner-status {
+    margin-top: 16px;
+    font-size: 14px;
+    color: var(--texto2);
+    text-align: center;
+  }
+
+  /* Botão manual */
+  .btn-manual {
+    margin-top: 16px;
+    background: var(--card);
+    border: 1.5px solid var(--borda);
+    color: var(--texto);
+    border-radius: 10px;
+    padding: 12px 24px;
+    font-size: 14px;
+    cursor: pointer;
+    width: 100%;
+    max-width: 360px;
+  }
+
+  /* Resultado */
+  #tela-resultado {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 50;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    text-align: center;
+    transition: background .3s;
+  }
+  #tela-resultado.liberado  { background: var(--verde-bg);   display: flex; }
+  #tela-resultado.bloqueado { background: var(--vermelho-bg); display: flex; }
+  #tela-resultado.aviso     { background: var(--amarelo-bg);  display: flex; }
+
+  .res-icon { font-size: 96px; margin-bottom: 16px; animation: pop .3s ease; }
+  @keyframes pop { from { transform: scale(0.5); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+  .res-titulo { font-size: 36px; font-weight: 900; margin-bottom: 8px; }
+  .res-titulo.verde    { color: var(--verde); }
+  .res-titulo.vermelho { color: var(--vermelho); }
+  .res-titulo.amarelo  { color: var(--amarelo); }
+  .res-detalhe { font-size: 16px; color: var(--texto2); margin-bottom: 8px; }
+  .res-nome { font-size: 22px; font-weight: 800; margin-bottom: 4px; }
+  .res-tipo { font-size: 14px; color: var(--texto2); margin-bottom: 24px; }
+
+  .res-card {
+    background: rgba(255,255,255,.05);
+    border-radius: 12px;
+    padding: 16px 24px;
+    margin-bottom: 24px;
+    width: 100%;
+    max-width: 320px;
+  }
+  .res-card div { display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 6px; }
+  .res-card div:last-child { margin-bottom: 0; }
+  .res-card .k { color: var(--texto2); }
+
+  .btn-voltar {
+    background: rgba(255,255,255,.1);
+    border: 1.5px solid rgba(255,255,255,.2);
+    color: #fff;
+    border-radius: 12px;
+    padding: 16px 40px;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    width: 100%;
+    max-width: 320px;
+  }
+
+  /* Input manual */
+  #modal-manual {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,.8);
+    z-index: 60;
+    align-items: flex-end;
+    justify-content: center;
+  }
+  #modal-manual.aberto { display: flex; }
+  .manual-sheet {
+    background: var(--card);
+    border-radius: 20px 20px 0 0;
+    padding: 28px 24px 40px;
+    width: 100%;
+    max-width: 480px;
+    animation: slideUp .25s ease;
+  }
+  @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+  .manual-sheet h3 { font-size: 18px; font-weight: 800; margin-bottom: 16px; }
+  .manual-sheet input {
+    width: 100%;
+    background: var(--card2);
+    border: 2px solid var(--borda);
+    border-radius: 10px;
+    padding: 14px 16px;
+    color: var(--texto);
+    font-size: 18px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    outline: none;
+    margin-bottom: 12px;
+  }
+  .manual-sheet input:focus { border-color: var(--azul); }
+  .btn-validar-manual {
+    width: 100%;
+    background: var(--azul);
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    padding: 14px;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    margin-bottom: 10px;
+  }
+  .btn-cancelar-manual {
+    width: 100%;
+    background: none;
+    border: 1px solid var(--borda);
+    color: var(--texto2);
+    border-radius: 10px;
+    padding: 12px;
+    font-size: 14px;
+    cursor: pointer;
+  }
+
+  canvas { display: none; }
+</style>
+</head>
+<body>
+
+<!-- ── CONFIG ─────────────────────────────────────── -->
+<script>
+var CONFIG = {
+  API_URL: 'COLE_A_URL_DO_APPS_SCRIPT_AQUI',
+  SENHA: '1234',
+  EVENTO: 'Quermesse 2025'
+};
+</script>
+<!-- ──────────────────────────────────────────────── -->
+
+<!-- TELA LOGIN -->
+<div id="tela-login">
+  <div class="login-icon">🎡</div>
+  <div class="login-title">Porteiro</div>
+  <div class="login-sub">App de conferência de ingressos</div>
+  <div class="login-form">
+    <input type="password" id="senha-input" placeholder="••••" maxlength="8"
+      onkeydown="if(event.key==='Enter') entrar()">
+    <button class="btn-entrar" onclick="entrar()">Entrar</button>
+    <div class="login-erro" id="login-erro">Senha incorreta. Tente novamente.</div>
+  </div>
+</div>
+
+<!-- TELA APP -->
+<div id="tela-app">
+  <div class="header">
+    <div class="header-left">
+      <div class="header-badge">AO VIVO</div>
+      <div class="header-title">🎡 Porteiro</div>
+    </div>
+    <button class="btn-sair" onclick="sair()">Sair</button>
+  </div>
+
+  <div class="counters">
+    <div class="counter verde">
+      <div class="num" id="cnt-liberados">0</div>
+      <div class="lbl">Liberados</div>
+    </div>
+    <div class="counter vermelho">
+      <div class="num" id="cnt-bloqueados">0</div>
+      <div class="lbl">Bloqueados</div>
+    </div>
+    <div class="counter amarelo">
+      <div class="num" id="cnt-total">0</div>
+      <div class="lbl">Total</div>
+    </div>
+  </div>
+
+  <div class="scanner-wrap">
+    <div class="scanner-box">
+      <video id="video" playsinline autoplay muted></video>
+      <div class="scanner-overlay">
+        <div class="scanner-frame"><span></span>
+          <div class="scanner-line"></div>
+        </div>
+      </div>
+    </div>
+    <canvas id="canvas"></canvas>
+    <div class="scanner-status" id="scanner-status">📷 Aponte para o QR Code do ingresso</div>
+    <button class="btn-manual" onclick="abrirManual()">⌨️ Digitar código manualmente</button>
+  </div>
+</div>
+
+<!-- TELA RESULTADO -->
+<div id="tela-resultado">
+  <div class="res-icon" id="res-icon"></div>
+  <div class="res-titulo" id="res-titulo"></div>
+  <div class="res-detalhe" id="res-detalhe"></div>
+  <div class="res-nome" id="res-nome"></div>
+  <div class="res-tipo" id="res-tipo"></div>
+  <div class="res-card" id="res-card"></div>
+  <button class="btn-voltar" onclick="voltarScanner()">📷 Próximo ingresso</button>
+</div>
+
+<!-- MODAL MANUAL -->
+<div id="modal-manual">
+  <div class="manual-sheet">
+    <h3>⌨️ Digitar código</h3>
+    <input type="text" id="manual-input" placeholder="QRM-XXXXXXXX" maxlength="12"
+      oninput="this.value=this.value.toUpperCase()"
+      onkeydown="if(event.key==='Enter') validarManual()">
+    <button class="btn-validar-manual" onclick="validarManual()">Validar ingresso</button>
+    <button class="btn-cancelar-manual" onclick="fecharManual()">Cancelar</button>
+  </div>
+</div>
+
+<script>
+// ── Estado ───────────────────────────────────────────────────
+var senhaPorteiro = '';
+var scanning = false;
+var processando = false;
+var stream = null;
+var animFrame = null;
+var stats = { liberados: 0, bloqueados: 0, total: 0 };
+
+// ── Login ────────────────────────────────────────────────────
+function entrar() {
+  var s = document.getElementById('senha-input').value;
+  senhaPorteiro = s;
+  // Testa a senha na API
+  fetch(CONFIG.API_URL, {
+    method: 'POST',
+    body: JSON.stringify({ acao: 'dashboard', senha: s })
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(data) {
+    if (data.ok) {
+      document.getElementById('tela-login').style.display = 'none';
+      document.getElementById('tela-app').style.display = 'flex';
+      // Carrega stats iniciais
+      stats.total     = data.total  || 0;
+      stats.liberados = data.usados || 0;
+      atualizarContadores();
+      iniciarCamera();
+    } else {
+      document.getElementById('login-erro').style.display = 'block';
+    }
+  })
+  .catch(function() {
+    // Se não tiver API ainda, entra direto (modo offline)
+    document.getElementById('tela-login').style.display = 'none';
+    document.getElementById('tela-app').style.display = 'flex';
+    iniciarCamera();
+  });
+}
+
+function sair() {
+  pararCamera();
+  document.getElementById('tela-app').style.display = 'none';
+  document.getElementById('tela-login').style.display = 'flex';
+  document.getElementById('senha-input').value = '';
+}
+
+// ── Câmera ───────────────────────────────────────────────────
+function iniciarCamera() {
+  scanning = true;
+  document.getElementById('scanner-status').textContent = '📷 Iniciando câmera...';
+
+  navigator.mediaDevices.getUserMedia({
+    video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } }
+  })
+  .then(function(s) {
+    stream = s;
+    var video = document.getElementById('video');
+    video.srcObject = s;
+    video.onloadedmetadata = function() {
+      video.play();
+      document.getElementById('scanner-status').textContent = '📷 Aponte para o QR Code do ingresso';
+      requestAnimationFrame(scanFrame);
+    };
+  })
+  .catch(function(err) {
+    document.getElementById('scanner-status').textContent = '⚠️ Câmera não disponível — use o botão manual';
+  });
+}
+
+function pararCamera() {
+  scanning = false;
+  if (stream) { stream.getTracks().forEach(function(t) { t.stop(); }); stream = null; }
+  if (animFrame) { cancelAnimationFrame(animFrame); animFrame = null; }
+}
+
+function scanFrame() {
+  if (!scanning) return;
+  var video  = document.getElementById('video');
+  var canvas = document.getElementById('canvas');
+
+  if (video.readyState === video.HAVE_ENOUGH_DATA) {
+    canvas.width  = video.videoWidth;
+    canvas.height = video.videoHeight;
+    var ctx = canvas.getContext('2d');
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    var imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    var code = jsQR(imageData.data, imageData.width, imageData.height, { inversionAttempts: 'dontInvert' });
+
+    if (code && !processando) {
+      validarIngresso(code.data);
+      return;
+    }
+  }
+  animFrame = requestAnimationFrame(scanFrame);
+}
+
+// ── Validação ────────────────────────────────────────────────
+async function validarIngresso(id) {
+  if (processando) return;
+  processando = true;
+  scanning = false;
+  document.getElementById('scanner-status').textContent = '🔍 Validando...';
+
+  try {
+    var res = await fetch(CONFIG.API_URL, {
+      method: 'POST',
+      body: JSON.stringify({ acao: 'validar', id: id, senha: senhaPorteiro })
+    });
+    var data = await res.json();
+    mostrarResultado(data, id);
+  } catch(err) {
+    mostrarResultado({ ok: false, codigo: 'ERRO', erro: 'Sem conexão com o servidor' }, id);
+  }
+}
+
+function mostrarResultado(data, id) {
+  var tela    = document.getElementById('tela-resultado');
+  var icon    = document.getElementById('res-icon');
+  var titulo  = document.getElementById('res-titulo');
+  var detalhe = document.getElementById('res-detalhe');
+  var nome    = document.getElementById('res-nome');
+  var tipo    = document.getElementById('res-tipo');
+  var card    = document.getElementById('res-card');
+
+  stats.total++;
+
+  if (data.ok && data.codigo === 'LIBERADO') {
+    stats.liberados++;
+    tela.className = 'liberado';
+    icon.textContent   = '✅';
+    titulo.textContent = 'LIBERADO';
+    titulo.className   = 'res-titulo verde';
+    detalhe.textContent = 'Entrada autorizada!';
+    nome.textContent   = data.nome || '—';
+    tipo.textContent   = '🎟️ ' + (data.tipo || '');
+    card.innerHTML =
+      '<div><span class="k">ID</span><span>' + id + '</span></div>' +
+      '<div><span class="k">Entrada</span><span>' + (data.dataUso || '') + '</span></div>';
+    vibrar([100, 50, 100]);
+  } else if (data.codigo === 'JA_USADO') {
+    stats.bloqueados++;
+    tela.className = 'bloqueado';
+    icon.textContent   = '🚫';
+    titulo.textContent = 'JÁ USADO';
+    titulo.className   = 'res-titulo vermelho';
+    detalhe.textContent = 'Este ingresso já entrou!';
+    nome.textContent   = data.nome || '—';
+    tipo.textContent   = '🎟️ ' + (data.tipo || '');
+    card.innerHTML =
+      '<div><span class="k">ID</span><span>' + id + '</span></div>' +
+      '<div><span class="k">Usado em</span><span>' + (data.dataUso || '—') + '</span></div>';
+    vibrar([200, 100, 200, 100, 200]);
+  } else if (data.codigo === 'NAO_ENCONTRADO') {
+    stats.bloqueados++;
+    tela.className = 'bloqueado';
+    icon.textContent   = '❌';
+    titulo.textContent = 'INVÁLIDO';
+    titulo.className   = 'res-titulo vermelho';
+    detalhe.textContent = 'Ingresso não encontrado no sistema';
+    nome.textContent   = '';
+    tipo.textContent   = '';
+    card.innerHTML     = '<div><span class="k">ID lido</span><span>' + id + '</span></div>';
+    vibrar([300, 100, 300]);
+  } else {
+    stats.bloqueados++;
+    tela.className = 'aviso';
+    icon.textContent   = '⚠️';
+    titulo.textContent = 'ATENÇÃO';
+    titulo.className   = 'res-titulo amarelo';
+    detalhe.textContent = data.erro || 'Erro desconhecido';
+    nome.textContent   = '';
+    tipo.textContent   = '';
+    card.innerHTML     = '<div><span class="k">ID</span><span>' + id + '</span></div>';
+  }
+
+  atualizarContadores();
+  tela.style.display = 'flex';
+
+  // Fecha automaticamente após 4s para ingressos liberados
+  if (data.ok && data.codigo === 'LIBERADO') {
+    setTimeout(voltarScanner, 4000);
+  }
+}
+
+function voltarScanner() {
+  document.getElementById('tela-resultado').style.display = 'none';
+  document.getElementById('tela-resultado').className = '';
+  processando = false;
+  scanning = true;
+  document.getElementById('scanner-status').textContent = '📷 Aponte para o QR Code do ingresso';
+  animFrame = requestAnimationFrame(scanFrame);
+}
+
+// ── Manual ───────────────────────────────────────────────────
+function abrirManual() {
+  document.getElementById('modal-manual').classList.add('aberto');
+  document.getElementById('manual-input').value = '';
+  document.getElementById('manual-input').focus();
+}
+
+function fecharManual() {
+  document.getElementById('modal-manual').classList.remove('aberto');
+}
+
+function validarManual() {
+  var id = document.getElementById('manual-input').value.trim().toUpperCase();
+  if (!id) return alert('Digite o código do ingresso.');
+  fecharManual();
+  validarIngresso(id);
+}
+
+// ── Helpers ──────────────────────────────────────────────────
+function atualizarContadores() {
+  document.getElementById('cnt-liberados').textContent = stats.liberados;
+  document.getElementById('cnt-bloqueados').textContent = stats.bloqueados;
+  document.getElementById('cnt-total').textContent = stats.total;
+}
+
+function vibrar(pattern) {
+  if (navigator.vibrate) navigator.vibrate(pattern);
+}
+</script>
+</body>
+</html>

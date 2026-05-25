@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quermesse 2025 — Ingressos</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<style>
+  :root {
+    --verde: #00b37e;
+    --verde-dark: #00875a;
+    --laranja: #f97316;
+    --laranja-dark: #ea6c0a;
+    --roxo: #6d28d9;
+    --bg: #0f0f1a;
+    --card: #1a1a2e;
+    --card2: #22223b;
+    --texto: #f1f0ff;
+    --texto2: #a09dc0;
+    --borda: #2e2b50;
+    --erro: #ef4444;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--texto); font-family: 'Segoe UI', sans-serif; min-height: 100vh; }
+
+  /* Hero */
+  .hero {
+    background: linear-gradient(135deg, #1a0533 0%, #0f0f1a 50%, #001a0f 100%);
+    padding: 48px 20px 40px;
+    text-align: center;
+    border-bottom: 1px solid var(--borda);
+    position: relative;
+    overflow: hidden;
+  }
+  .hero::before {
+    content: '🎡';
+    font-size: 120px;
+    position: absolute;
+    top: -20px; right: -20px;
+    opacity: 0.08;
+  }
+  .hero-badge {
+    display: inline-block;
+    background: var(--laranja);
+    color: #fff;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    padding: 4px 12px;
+    border-radius: 99px;
+    margin-bottom: 16px;
+  }
+  .hero h1 { font-size: clamp(28px, 6vw, 52px); font-weight: 900; line-height: 1.1; }
+  .hero h1 span { color: var(--laranja); }
+  .hero-info { display: flex; justify-content: center; gap: 24px; margin-top: 20px; flex-wrap: wrap; }
+  .hero-info div { display: flex; align-items: center; gap: 6px; font-size: 14px; color: var(--texto2); }
+  .hero-info span { font-size: 18px; }
+
+  /* Layout */
+  .container { max-width: 520px; margin: 0 auto; padding: 32px 16px 80px; }
+
+  /* Tipos */
+  .section-title { font-size: 11px; letter-spacing: 2px; text-transform: uppercase; color: var(--texto2); margin-bottom: 12px; }
+  .tipos { display: grid; gap: 10px; margin-bottom: 28px; }
+  .tipo-card {
+    background: var(--card);
+    border: 2px solid var(--borda);
+    border-radius: 12px;
+    padding: 16px 20px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    transition: all .2s;
+  }
+  .tipo-card:hover { border-color: var(--laranja); background: var(--card2); }
+  .tipo-card.selecionado { border-color: var(--laranja); background: #2a1500; }
+  .tipo-card .nome { font-weight: 700; font-size: 16px; }
+  .tipo-card .desc { font-size: 12px; color: var(--texto2); margin-top: 2px; }
+  .tipo-card .preco { font-size: 22px; font-weight: 900; color: var(--laranja); }
+  .tipo-card .radio { width: 20px; height: 20px; border-radius: 50%; border: 2px solid var(--borda); margin-right: 14px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
+  .tipo-card.selecionado .radio { border-color: var(--laranja); background: var(--laranja); }
+  .tipo-card.selecionado .radio::after { content: ''; width: 8px; height: 8px; border-radius: 50%; background: #fff; }
+  .tipo-esq { display: flex; align-items: center; }
+
+  /* Form */
+  .form-group { margin-bottom: 16px; }
+  label { display: block; font-size: 12px; color: var(--texto2); margin-bottom: 6px; letter-spacing: .5px; }
+  input, select {
+    width: 100%;
+    background: var(--card);
+    border: 1.5px solid var(--borda);
+    border-radius: 8px;
+    padding: 13px 16px;
+    color: var(--texto);
+    font-size: 15px;
+    outline: none;
+    transition: border-color .2s;
+  }
+  input:focus, select:focus { border-color: var(--laranja); }
+  input::placeholder { color: var(--texto2); }
+  select option { background: var(--card); }
+
+  /* Pagamento */
+  .pagamentos { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 28px; }
+  .pag-btn {
+    background: var(--card);
+    border: 2px solid var(--borda);
+    border-radius: 10px;
+    padding: 14px 10px;
+    cursor: pointer;
+    text-align: center;
+    transition: all .2s;
+    color: var(--texto);
+  }
+  .pag-btn:hover { border-color: var(--verde); }
+  .pag-btn.ativo { border-color: var(--verde); background: #001a0f; }
+  .pag-btn .icon { font-size: 24px; margin-bottom: 4px; }
+  .pag-btn .label { font-size: 12px; font-weight: 600; }
+
+  /* Resumo */
+  .resumo {
+    background: var(--card2);
+    border: 1px solid var(--borda);
+    border-radius: 12px;
+    padding: 16px 20px;
+    margin-bottom: 24px;
+  }
+  .resumo-linha { display: flex; justify-content: space-between; font-size: 14px; margin-bottom: 8px; color: var(--texto2); }
+  .resumo-linha.total { font-size: 18px; font-weight: 800; color: var(--texto); margin-bottom: 0; padding-top: 10px; border-top: 1px solid var(--borda); }
+
+  /* Botão */
+  .btn-comprar {
+    width: 100%;
+    background: linear-gradient(135deg, var(--laranja), #dc2626);
+    color: #fff;
+    border: none;
+    border-radius: 12px;
+    padding: 18px;
+    font-size: 17px;
+    font-weight: 800;
+    cursor: pointer;
+    transition: opacity .2s, transform .1s;
+    letter-spacing: .5px;
+  }
+  .btn-comprar:hover { opacity: .92; }
+  .btn-comprar:active { transform: scale(.98); }
+  .btn-comprar:disabled { opacity: .5; cursor: not-allowed; }
+
+  /* Modal ingresso */
+  .overlay { position: fixed; inset: 0; background: rgba(0,0,0,.85); z-index: 100; display: none; align-items: center; justify-content: center; padding: 16px; }
+  .overlay.aberto { display: flex; }
+  .modal {
+    background: var(--card);
+    border: 1px solid var(--borda);
+    border-radius: 20px;
+    padding: 32px 24px;
+    max-width: 380px;
+    width: 100%;
+    text-align: center;
+    animation: slideUp .3s ease;
+  }
+  @keyframes slideUp { from { transform: translateY(30px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+  .modal .check { font-size: 52px; margin-bottom: 12px; }
+  .modal h2 { font-size: 22px; font-weight: 900; margin-bottom: 4px; }
+  .modal .sub { color: var(--texto2); font-size: 14px; margin-bottom: 24px; }
+  .qr-box {
+    background: #fff;
+    border-radius: 12px;
+    padding: 16px;
+    display: inline-block;
+    margin-bottom: 20px;
+  }
+  .ingresso-id { font-size: 13px; color: var(--texto2); letter-spacing: 2px; margin-bottom: 20px; font-family: monospace; }
+  .ingresso-info { background: var(--card2); border-radius: 10px; padding: 14px; margin-bottom: 20px; text-align: left; }
+  .ingresso-info div { display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 6px; }
+  .ingresso-info div:last-child { margin-bottom: 0; }
+  .ingresso-info .key { color: var(--texto2); }
+  .ingresso-info .val { font-weight: 700; }
+  .btns-modal { display: grid; gap: 10px; }
+  .btn-wpp {
+    background: #25d366;
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    padding: 14px;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+  .btn-email {
+    background: var(--roxo);
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    padding: 14px;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+  .btn-fechar {
+    background: transparent;
+    border: 1.5px solid var(--borda);
+    color: var(--texto2);
+    border-radius: 10px;
+    padding: 12px;
+    font-size: 14px;
+    cursor: pointer;
+  }
+
+  /* PIX modal */
+  .pix-modal { display: none; background: var(--card2); border-radius: 12px; padding: 20px; margin-bottom: 16px; text-align: center; }
+  .pix-modal.aberto { display: block; }
+  .pix-chave { font-size: 18px; font-weight: 800; color: var(--verde); letter-spacing: 2px; margin: 8px 0; }
+  .pix-valor { font-size: 13px; color: var(--texto2); }
+
+  .aviso-pix {
+    background: #1a1000;
+    border: 1px solid #f97316;
+    border-radius: 8px;
+    padding: 12px 16px;
+    font-size: 13px;
+    color: #fdba74;
+    margin-bottom: 16px;
+    display: none;
+  }
+  .aviso-pix.aberto { display: block; }
+
+  .spinner { display: none; }
+  .btn-comprar.loading .texto { display: none; }
+  .btn-comprar.loading .spinner { display: inline; }
+</style>
+</head>
+<body>
+
+<!-- ── CONFIG — edite aqui ──────────────────────── -->
+<script>
+var CONFIG = {
+  API_URL: 'https://script.google.com/macros/s/AKfycbyAhHCqLYcFFHa11laD93Rqmf22RjIS_nzBYG-7VyCAo6Je9HmcSvFgSvHh8xHA0tm9zw/exec',
+  EVENTO: 'Quermesse da Paróquia 2025',
+  DATA: '14 de Junho de 2025',
+  LOCAL: 'Salão Paroquial — Rua das Flores, 123',
+  HORARIO: '17h às 23h',
+  PIX_CHAVE: '(51) 99999-9999',
+  PIX_NOME: 'Paróquia São João',
+  TIPOS: [
+    { id: 'Inteira', nome: 'Inteira',  desc: 'Adultos',          valor: 25.00, emoji: '🎟️' },
+    { id: 'Meia',    nome: 'Meia',     desc: 'Estudantes c/ carteirinha', valor: 12.50, emoji: '🎫' },
+    { id: 'VIP',     nome: 'VIP',      desc: 'Área especial + drink',     valor: 50.00, emoji: '⭐' },
+    { id: 'Criança', nome: 'Criança',  desc: 'Até 10 anos',     valor: 0.00,  emoji: '👶' },
+  ]
+};
+</script>
+<!-- ──────────────────────────────────────────────── -->
+
+<div class="hero">
+  <div class="hero-badge">🎡 Venda Antecipada</div>
+  <h1>Ingressos<br><span id="hero-nome">Quermesse 2025</span></h1>
+  <div class="hero-info">
+    <div><span>📅</span> <span id="hero-data"></span></div>
+    <div><span>📍</span> <span id="hero-local"></span></div>
+    <div><span>🕔</span> <span id="hero-hora"></span></div>
+  </div>
+</div>
+
+<div class="container">
+
+  <!-- Tipos -->
+  <div class="section-title">Escolha seu ingresso</div>
+  <div class="tipos" id="tipos"></div>
+
+  <!-- Dados -->
+  <div class="section-title">Seus dados</div>
+  <div class="form-group">
+    <label>Nome completo</label>
+    <input type="text" id="nome" placeholder="João da Silva">
+  </div>
+  <div class="form-group">
+    <label>WhatsApp</label>
+    <input type="tel" id="whatsapp" placeholder="(51) 99999-9999">
+  </div>
+  <div class="form-group">
+    <label>E-mail</label>
+    <input type="email" id="email" placeholder="joao@email.com">
+  </div>
+
+  <!-- Pagamento -->
+  <div class="section-title" style="margin-top:8px">Forma de pagamento</div>
+  <div class="pagamentos" id="pagamentos">
+    <div class="pag-btn" onclick="selecionarPag('PIX')">
+      <div class="icon">⚡</div><div class="label">PIX</div>
+    </div>
+    <div class="pag-btn" onclick="selecionarPag('Débito')">
+      <div class="icon">💳</div><div class="label">Débito</div>
+    </div>
+    <div class="pag-btn" onclick="selecionarPag('Crédito')">
+      <div class="icon">💰</div><div class="label">Crédito</div>
+    </div>
+    <div class="pag-btn" onclick="selecionarPag('Dinheiro')">
+      <div class="icon">💵</div><div class="label">Dinheiro</div>
+    </div>
+  </div>
+
+  <!-- Info PIX -->
+  <div class="pix-modal" id="pix-info">
+    <div style="font-size:13px;color:var(--texto2);margin-bottom:4px">Chave PIX</div>
+    <div class="pix-chave" id="pix-chave-val"></div>
+    <div class="pix-valor" id="pix-nome-val"></div>
+    <div style="font-size:12px;color:var(--texto2);margin-top:8px">Após o pagamento, clique em Confirmar abaixo</div>
+  </div>
+
+  <div class="aviso-pix" id="aviso-pix">
+    ⚠️ Para PIX e Dinheiro, o organizador irá validar seu pagamento. Seu ingresso será gerado após a confirmação.
+  </div>
+
+  <!-- Resumo -->
+  <div class="resumo" id="resumo" style="display:none">
+    <div class="resumo-linha"><span>Ingresso</span><span id="res-tipo">—</span></div>
+    <div class="resumo-linha"><span>Pagamento</span><span id="res-pag">—</span></div>
+    <div class="resumo-linha total"><span>Total</span><span id="res-valor">—</span></div>
+  </div>
+
+  <button class="btn-comprar" id="btn-comprar" onclick="comprar()">
+    <span class="texto">🎟️ Garantir meu ingresso</span>
+    <span class="spinner">⏳ Aguarde...</span>
+  </button>
+</div>
+
+<!-- Modal ingresso gerado -->
+<div class="overlay" id="overlay">
+  <div class="modal">
+    <div class="check">🎉</div>
+    <h2>Ingresso confirmado!</h2>
+    <div class="sub">Apresente o QR Code na entrada</div>
+    <div class="qr-box"><div id="qrcode"></div></div>
+    <div class="ingresso-id" id="modal-id"></div>
+    <div class="ingresso-info">
+      <div><span class="key">Nome</span><span class="val" id="modal-nome"></span></div>
+      <div><span class="key">Tipo</span><span class="val" id="modal-tipo"></span></div>
+      <div><span class="key">Evento</span><span class="val" id="modal-evento"></span></div>
+      <div><span class="key">Data</span><span class="val" id="modal-data"></span></div>
+    </div>
+    <div class="btns-modal">
+      <button class="btn-wpp" id="btn-wpp" onclick="enviarWhatsApp()">📱 Enviar pelo WhatsApp</button>
+      <button class="btn-email" id="btn-email" onclick="enviarEmail()">📧 Enviar por E-mail</button>
+      <button class="btn-fechar" onclick="fecharModal()">Fechar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── Estado ───────────────────────────────────────────────────
+var tipoSelecionado = null;
+var pagSelecionado  = null;
+var ingressoGerado  = null;
+
+// ── Init ─────────────────────────────────────────────────────
+window.onload = function() {
+  document.getElementById('hero-nome').textContent  = CONFIG.EVENTO;
+  document.getElementById('hero-data').textContent  = CONFIG.DATA;
+  document.getElementById('hero-local').textContent = CONFIG.LOCAL;
+  document.getElementById('hero-hora').textContent  = CONFIG.HORARIO;
+  document.getElementById('pix-chave-val').textContent = CONFIG.PIX_CHAVE;
+  document.getElementById('pix-nome-val').textContent  = CONFIG.PIX_NOME;
+  renderTipos();
+};
+
+function renderTipos() {
+  var c = document.getElementById('tipos');
+  CONFIG.TIPOS.forEach(function(t) {
+    var div = document.createElement('div');
+    div.className = 'tipo-card';
+    div.id = 'tipo-' + t.id;
+    div.onclick = function() { selecionarTipo(t); };
+    div.innerHTML =
+      '<div class="tipo-esq">' +
+        '<div class="radio"></div>' +
+        '<div><div class="nome">' + t.emoji + ' ' + t.nome + '</div><div class="desc">' + t.desc + '</div></div>' +
+      '</div>' +
+      '<div class="preco">' + (t.valor === 0 ? 'Grátis' : 'R$ ' + t.valor.toFixed(2).replace('.',',')) + '</div>';
+    c.appendChild(div);
+  });
+}
+
+function selecionarTipo(t) {
+  tipoSelecionado = t;
+  document.querySelectorAll('.tipo-card').forEach(function(el) { el.classList.remove('selecionado'); });
+  document.getElementById('tipo-' + t.id).classList.add('selecionado');
+  atualizarResumo();
+}
+
+function selecionarPag(p) {
+  pagSelecionado = p;
+  document.querySelectorAll('.pag-btn').forEach(function(el) { el.classList.remove('ativo'); });
+  event.currentTarget.classList.add('ativo');
+
+  var pixInfo  = document.getElementById('pix-info');
+  var avisoPix = document.getElementById('aviso-pix');
+
+  if (p === 'PIX') {
+    pixInfo.classList.add('aberto');
+    avisoPix.classList.add('aberto');
+  } else if (p === 'Dinheiro') {
+    pixInfo.classList.remove('aberto');
+    avisoPix.classList.add('aberto');
+  } else {
+    pixInfo.classList.remove('aberto');
+    avisoPix.classList.remove('aberto');
+  }
+  atualizarResumo();
+}
+
+function atualizarResumo() {
+  if (!tipoSelecionado || !pagSelecionado) return;
+  document.getElementById('resumo').style.display = 'block';
+  document.getElementById('res-tipo').textContent  = tipoSelecionado.nome;
+  document.getElementById('res-pag').textContent   = pagSelecionado;
+  document.getElementById('res-valor').textContent =
+    tipoSelecionado.valor === 0 ? 'Grátis' : 'R$ ' + tipoSelecionado.valor.toFixed(2).replace('.',',');
+}
+
+// ── Comprar ──────────────────────────────────────────────────
+async function comprar() {
+  var nome     = document.getElementById('nome').value.trim();
+  var whatsapp = document.getElementById('whatsapp').value.trim();
+  var email    = document.getElementById('email').value.trim();
+
+  if (!nome)            return alert('Por favor informe seu nome.');
+  if (!whatsapp)        return alert('Por favor informe seu WhatsApp.');
+  if (!tipoSelecionado) return alert('Selecione o tipo de ingresso.');
+  if (!pagSelecionado)  return alert('Selecione a forma de pagamento.');
+
+  var btn = document.getElementById('btn-comprar');
+  btn.disabled = true;
+  btn.classList.add('loading');
+
+  try {
+    var contato = whatsapp + (email ? ' / ' + email : '');
+    var res = await fetch(CONFIG.API_URL, {
+      method: 'POST',
+      body: JSON.stringify({
+        acao: 'comprar',
+        nome: nome,
+        contato: contato,
+        tipo: tipoSelecionado.id,
+        pagamento: pagSelecionado,
+        valor: tipoSelecionado.valor
+      })
+    });
+    var data = await res.json();
+
+    if (!data.ok) throw new Error(data.erro || 'Erro ao gerar ingresso');
+
+    ingressoGerado = { id: data.id, nome: nome, tipo: tipoSelecionado.nome, whatsapp: whatsapp, email: email };
+    abrirModal(ingressoGerado);
+  } catch (err) {
+    alert('Erro: ' + err.message);
+  } finally {
+    btn.disabled = false;
+    btn.classList.remove('loading');
+  }
+}
+
+// ── Modal ────────────────────────────────────────────────────
+function abrirModal(ing) {
+  document.getElementById('modal-id').textContent    = ing.id;
+  document.getElementById('modal-nome').textContent  = ing.nome;
+  document.getElementById('modal-tipo').textContent  = ing.tipo;
+  document.getElementById('modal-evento').textContent = CONFIG.EVENTO;
+  document.getElementById('modal-data').textContent  = CONFIG.DATA;
+
+  // Gera QR Code
+  document.getElementById('qrcode').innerHTML = '';
+  new QRCode(document.getElementById('qrcode'), {
+    text: ing.id,
+    width: 200, height: 200,
+    colorDark: '#000000', colorLight: '#ffffff',
+    correctLevel: QRCode.CorrectLevel.H
+  });
+
+  document.getElementById('overlay').classList.add('aberto');
+}
+
+function fecharModal() {
+  document.getElementById('overlay').classList.remove('aberto');
+}
+
+function enviarWhatsApp() {
+  if (!ingressoGerado) return;
+  var msg = '🎡 *' + CONFIG.EVENTO + '*\n\n' +
+    '✅ Ingresso confirmado!\n\n' +
+    '👤 Nome: ' + ingressoGerado.nome + '\n' +
+    '🎟️ Tipo: ' + ingressoGerado.tipo + '\n' +
+    '🔑 ID: *' + ingressoGerado.id + '*\n\n' +
+    '📅 ' + CONFIG.DATA + '\n' +
+    '📍 ' + CONFIG.LOCAL + '\n\n' +
+    'Apresente este código na entrada. Guarde esta mensagem!';
+  var num = ingressoGerado.whatsapp.replace(/\D/g,'');
+  if (num.length <= 11) num = '55' + num;
+  window.open('https://wa.me/' + num + '?text=' + encodeURIComponent(msg), '_blank');
+}
+
+function enviarEmail() {
+  if (!ingressoGerado) return;
+  var assunto = 'Seu ingresso — ' + CONFIG.EVENTO;
+  var corpo =
+    'Olá, ' + ingressoGerado.nome + '!\n\n' +
+    'Seu ingresso foi confirmado!\n\n' +
+    'Evento: ' + CONFIG.EVENTO + '\n' +
+    'Data: ' + CONFIG.DATA + '\n' +
+    'Local: ' + CONFIG.LOCAL + '\n' +
+    'Tipo: ' + ingressoGerado.tipo + '\n' +
+    'ID do ingresso: ' + ingressoGerado.id + '\n\n' +
+    'Apresente o ID ou o QR Code na entrada.\n\n' +
+    'Até lá! 🎡';
+  window.open('mailto:' + ingressoGerado.email +
+    '?subject=' + encodeURIComponent(assunto) +
+    '&body=' + encodeURIComponent(corpo));
+}
+</script>
+</body>
+</html>

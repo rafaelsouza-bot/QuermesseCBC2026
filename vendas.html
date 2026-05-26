@@ -238,6 +238,18 @@
   .spinner { display: none; }
   .btn-comprar.loading .texto { display: none; }
   .btn-comprar.loading .spinner { display: inline; }
+  .aviso-print {
+    background: #1a0a00;
+    border: 2px solid #f97316;
+    border-radius: 10px;
+    padding: 12px 16px;
+    font-size: 13px;
+    font-weight: 700;
+    color: #fdba74;
+    margin-bottom: 16px;
+    animation: pulse 1.5s infinite;
+  }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.6} }
 </style>
 </head>
 <body>
@@ -341,6 +353,7 @@ var CONFIG = {
     <div class="check">🎉</div>
     <h2>Ingresso confirmado!</h2>
     <div class="sub">Apresente o QR Code na entrada</div>
+    <div class="aviso-print">📸 SALVE UM PRINT DESTA TELA! É seu comprovante de entrada.</div>
     <div class="qr-box"><div id="qrcode"></div></div>
     <div class="ingresso-id" id="modal-id"></div>
     <div class="ingresso-info">
@@ -350,6 +363,7 @@ var CONFIG = {
       <div><span class="key">Data</span><span class="val" id="modal-data"></span></div>
     </div>
     <div class="btns-modal">
+      <button class="btn-print" onclick="window.print()" style="width:100%;background:#f97316;color:#fff;border:none;border-radius:10px;padding:14px;font-size:15px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:0">📸 Salvar / Imprimir ingresso</button>
       <button class="btn-wpp" id="btn-wpp" onclick="enviarWhatsApp()">📱 Enviar pelo WhatsApp</button>
       <button class="btn-email" id="btn-email" onclick="enviarEmail()">📧 Enviar por E-mail</button>
       <button class="btn-fechar" onclick="fecharModal()">Fechar</button>
@@ -482,7 +496,7 @@ function abrirModal(ing) {
   document.getElementById('qrcode').innerHTML = '';
   new QRCode(document.getElementById('qrcode'), {
     text: ing.id,
-    width: 200, height: 200,
+    width: 280, height: 280,
     colorDark: '#000000', colorLight: '#ffffff',
     correctLevel: QRCode.CorrectLevel.H
   });
@@ -506,7 +520,8 @@ function enviarWhatsApp() {
     'Apresente este código na entrada. Guarde esta mensagem!';
   var num = ingressoGerado.whatsapp.replace(/\D/g,'');
   if (num.length <= 11) num = '55' + num;
-  window.open('https://wa.me/' + num + '?text=' + encodeURIComponent(msg), '_blank');
+  var url = 'https://wa.me/' + num + '?text=' + encodeURIComponent(msg);
+  window.location.href = url;
 }
 
 function enviarEmail() {

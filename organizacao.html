@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Organização — Quermesse 2026</title>
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --card: #141420;
+    --card2: #1c1c2e;
+    --borda: #2a2a40;
+    --texto: #f0efff;
+    --texto2: #8886aa;
+    --verde: #00c97a;
+    --verde-bg: #001a0f;
+    --vermelho: #ff4444;
+    --vermelho-bg: #1a0000;
+    --amarelo: #f59e0b;
+    --amarelo-bg: #1a1200;
+    --azul: #3b82f6;
+    --roxo: #8b5cf6;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  body { background: var(--bg); color: var(--texto); font-family: 'Segoe UI', sans-serif; min-height: 100vh; }
+
+  /* Login */
+  #tela-login {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 32px 24px;
+    background: radial-gradient(ellipse at center, #0d0025 0%, #0a0a0f 70%);
+  }
+  .login-icon { font-size: 64px; margin-bottom: 16px; }
+  .login-title { font-size: 28px; font-weight: 900; margin-bottom: 4px; }
+  .login-sub { font-size: 14px; color: var(--texto2); margin-bottom: 40px; }
+  .login-input {
+    width: 100%; max-width: 320px;
+    background: var(--card); border: 2px solid var(--borda);
+    border-radius: 12px; padding: 16px 20px;
+    color: var(--texto); font-size: 20px; letter-spacing: 4px;
+    text-align: center; outline: none; margin-bottom: 12px;
+    transition: border-color .2s;
+  }
+  .login-input:focus { border-color: var(--roxo); }
+  .btn-entrar {
+    width: 100%; max-width: 320px;
+    background: var(--roxo); color: #fff;
+    border: none; border-radius: 12px;
+    padding: 16px; font-size: 16px; font-weight: 700;
+    cursor: pointer;
+  }
+  .login-erro { color: var(--vermelho); font-size: 13px; text-align: center; margin-top: 10px; display: none; }
+
+  /* App */
+  #tela-app { display: none; }
+
+  /* Header */
+  .header {
+    background: var(--card);
+    border-bottom: 1px solid var(--borda);
+    padding: 14px 20px;
+    display: flex; align-items: center; justify-content: space-between;
+    position: sticky; top: 0; z-index: 10;
+  }
+  .header-title { font-size: 16px; font-weight: 800; }
+  .header-sub { font-size: 11px; color: var(--texto2); }
+  .btn-sair { background: none; border: 1px solid var(--borda); color: var(--texto2); border-radius: 8px; padding: 6px 12px; font-size: 12px; cursor: pointer; }
+
+  /* Stats */
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+    padding: 16px;
+    background: var(--card2);
+    border-bottom: 1px solid var(--borda);
+  }
+  .stat {
+    background: var(--card);
+    border-radius: 10px;
+    padding: 10px 8px;
+    text-align: center;
+    border: 1px solid var(--borda);
+    cursor: pointer;
+    transition: border-color .2s;
+  }
+  .stat:hover { border-color: var(--roxo); }
+  .stat.ativo-filtro { border-color: var(--roxo); background: #1a0a2e; }
+  .stat .num { font-size: 22px; font-weight: 900; line-height: 1; }
+  .stat .lbl { font-size: 9px; color: var(--texto2); margin-top: 3px; text-transform: uppercase; letter-spacing: .5px; }
+  .stat.pendente .num { color: var(--amarelo); }
+  .stat.ativo    .num { color: var(--verde); }
+  .stat.usado    .num { color: var(--azul); }
+  .stat.cancelado .num { color: var(--vermelho); }
+
+  /* Busca */
+  .busca-wrap { padding: 12px 16px; background: var(--card2); border-bottom: 1px solid var(--borda); }
+  .busca-input {
+    width: 100%;
+    background: var(--card); border: 1.5px solid var(--borda);
+    border-radius: 10px; padding: 11px 16px;
+    color: var(--texto); font-size: 14px; outline: none;
+    transition: border-color .2s;
+  }
+  .busca-input:focus { border-color: var(--roxo); }
+
+  /* Lista */
+  .lista { padding: 12px 16px 80px; }
+  .lista-vazia { text-align: center; padding: 60px 20px; color: var(--texto2); font-size: 14px; }
+  .lista-vazia .icon { font-size: 48px; margin-bottom: 12px; }
+
+  /* Card ingresso */
+  .ingresso-card {
+    background: var(--card);
+    border: 1.5px solid var(--borda);
+    border-radius: 14px;
+    padding: 16px;
+    margin-bottom: 10px;
+    transition: border-color .2s;
+  }
+  .ingresso-card.pendente { border-left: 4px solid var(--amarelo); }
+  .ingresso-card.ativo    { border-left: 4px solid var(--verde); }
+  .ingresso-card.usado    { border-left: 4px solid var(--azul); }
+  .ingresso-card.cancelado { border-left: 4px solid var(--vermelho); opacity: .7; }
+
+  .card-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; }
+  .card-nome { font-size: 16px; font-weight: 800; }
+  .card-id { font-size: 11px; color: var(--texto2); font-family: monospace; letter-spacing: 1px; margin-top: 2px; }
+
+  .badge {
+    font-size: 10px; font-weight: 800; letter-spacing: 1px;
+    padding: 3px 10px; border-radius: 99px; text-transform: uppercase; white-space: nowrap;
+  }
+  .badge.pendente  { background: var(--amarelo-bg); color: var(--amarelo); border: 1px solid var(--amarelo); }
+  .badge.ativo     { background: var(--verde-bg);   color: var(--verde);   border: 1px solid var(--verde); }
+  .badge.usado     { background: #001020;            color: var(--azul);    border: 1px solid var(--azul); }
+  .badge.cancelado { background: var(--vermelho-bg); color: var(--vermelho); border: 1px solid var(--vermelho); }
+
+  .card-info { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 12px; }
+  .card-info-item { font-size: 12px; }
+  .card-info-item .k { color: var(--texto2); display: block; font-size: 10px; margin-bottom: 1px; }
+  .card-info-item .v { font-weight: 600; }
+
+  .card-acoes { display: flex; gap: 8px; }
+  .btn-aprovar {
+    flex: 1; background: var(--verde-bg); color: var(--verde);
+    border: 1.5px solid var(--verde); border-radius: 8px;
+    padding: 10px; font-size: 13px; font-weight: 700; cursor: pointer;
+    transition: background .2s;
+  }
+  .btn-aprovar:hover { background: #002a1a; }
+  .btn-rejeitar {
+    flex: 1; background: var(--vermelho-bg); color: var(--vermelho);
+    border: 1.5px solid var(--vermelho); border-radius: 8px;
+    padding: 10px; font-size: 13px; font-weight: 700; cursor: pointer;
+    transition: background .2s;
+  }
+  .btn-rejeitar:hover { background: #2a0000; }
+  .btn-cancelar-card {
+    background: var(--card2); color: var(--texto2);
+    border: 1.5px solid var(--borda); border-radius: 8px;
+    padding: 10px 14px; font-size: 13px; cursor: pointer;
+  }
+
+  /* Atualizar */
+  .btn-atualizar {
+    position: fixed; bottom: 24px; right: 20px;
+    background: var(--roxo); color: #fff;
+    border: none; border-radius: 99px;
+    padding: 14px 22px; font-size: 14px; font-weight: 700;
+    cursor: pointer; box-shadow: 0 4px 20px rgba(139,92,246,.4);
+    display: flex; align-items: center; gap: 8px;
+  }
+
+  /* Toast */
+  .toast {
+    position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%);
+    background: var(--card2); border: 1px solid var(--borda);
+    border-radius: 10px; padding: 12px 20px;
+    font-size: 14px; font-weight: 600;
+    opacity: 0; transition: opacity .3s; pointer-events: none;
+    white-space: nowrap; z-index: 100;
+  }
+  .toast.show { opacity: 1; }
+  .toast.verde { border-color: var(--verde); color: var(--verde); }
+  .toast.vermelho { border-color: var(--vermelho); color: var(--vermelho); }
+
+  /* Loading */
+  .loading-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,.6);
+    display: none; align-items: center; justify-content: center;
+    z-index: 50; font-size: 32px;
+  }
+  .loading-overlay.show { display: flex; }
+</style>
+</head>
+<body>
+
+<script>
+var CONFIG = {
+  API_URL: 'https://script.google.com/macros/s/AKfycbyAhHCqLYcFFHa11laD93Rqmf22RjIS_nzBYG-7VyCAo6Je9HmcSvFgSvHh8xHA0tm9zw/exec',
+  SENHA: 'Org@2026*'
+};
+</script>
+
+<!-- LOGIN -->
+<div id="tela-login">
+  <div class="login-icon">🏛️</div>
+  <div class="login-title">Organização</div>
+  <div class="login-sub">Painel de gestão de ingressos</div>
+  <input class="login-input" type="password" id="senha-input" placeholder="••••••••" maxlength="12"
+    onkeydown="if(event.key==='Enter') entrar()">
+  <button class="btn-entrar" onclick="entrar()">Entrar</button>
+  <div class="login-erro" id="login-erro">Senha incorreta.</div>
+</div>
+
+<!-- APP -->
+<div id="tela-app">
+  <div class="header">
+    <div>
+      <div class="header-title">🏛️ Painel da Organização</div>
+      <div class="header-sub" id="header-sub">Quermesse 2026</div>
+    </div>
+    <button class="btn-sair" onclick="sair()">Sair</button>
+  </div>
+
+  <div class="stats" id="stats">
+    <div class="stat pendente"  onclick="filtrar('PENDENTE')"  id="stat-pendente">
+      <div class="num" id="cnt-pendente">—</div><div class="lbl">Pendentes</div>
+    </div>
+    <div class="stat ativo"     onclick="filtrar('ATIVO')"     id="stat-ativo">
+      <div class="num" id="cnt-ativo">—</div><div class="lbl">Ativos</div>
+    </div>
+    <div class="stat usado"     onclick="filtrar('USADO')"     id="stat-usado">
+      <div class="num" id="cnt-usado">—</div><div class="lbl">Usados</div>
+    </div>
+    <div class="stat cancelado" onclick="filtrar('CANCELADO')" id="stat-cancelado">
+      <div class="num" id="cnt-cancelado">—</div><div class="lbl">Cancelados</div>
+    </div>
+  </div>
+
+  <div class="busca-wrap">
+    <input class="busca-input" type="text" id="busca" placeholder="🔍 Buscar por nome, ID ou tipo..." oninput="renderLista()">
+  </div>
+
+  <div class="lista" id="lista"></div>
+
+  <button class="btn-atualizar" onclick="carregarIngressos()">🔄 Atualizar</button>
+</div>
+
+<div class="toast" id="toast"></div>
+<div class="loading-overlay" id="loading">⏳</div>
+
+<script>
+var senhaOrg   = '';
+var todosIngressos = [];
+var filtroAtual = 'TODOS';
+
+// ── Login ────────────────────────────────────────────────────
+async function entrar() {
+  var s = document.getElementById('senha-input').value;
+  mostrarLoading(true);
+  try {
+    var res  = await fetch(CONFIG.API_URL, { method: 'POST', body: JSON.stringify({ acao: 'dashboard', senha: s }) });
+    var data = await res.json();
+    if (data.ok) {
+      senhaOrg = s;
+      document.getElementById('tela-login').style.display = 'none';
+      document.getElementById('tela-app').style.display   = 'block';
+      atualizarStats(data);
+      await carregarIngressos();
+    } else {
+      document.getElementById('login-erro').style.display = 'block';
+    }
+  } catch(e) {
+    document.getElementById('login-erro').style.display = 'block';
+  }
+  mostrarLoading(false);
+}
+
+function sair() {
+  senhaOrg = '';
+  todosIngressos = [];
+  document.getElementById('tela-app').style.display   = 'none';
+  document.getElementById('tela-login').style.display = 'flex';
+  document.getElementById('senha-input').value = '';
+}
+
+// ── Carregar ─────────────────────────────────────────────────
+async function carregarIngressos() {
+  mostrarLoading(true);
+  try {
+    var res  = await fetch(CONFIG.API_URL, { method: 'POST', body: JSON.stringify({ acao: 'listar', senha: senhaOrg, filtro: 'TODOS' }) });
+    var data = await res.json();
+    if (data.ok) {
+      todosIngressos = data.lista;
+      atualizarContadores();
+      renderLista();
+    }
+  } catch(e) { toast('Erro ao carregar', 'vermelho'); }
+  mostrarLoading(false);
+}
+
+function atualizarContadores() {
+  var p=0, a=0, u=0, c=0;
+  todosIngressos.forEach(function(i) {
+    if (i.status === 'PENDENTE')  p++;
+    if (i.status === 'ATIVO')     a++;
+    if (i.status === 'USADO')     u++;
+    if (i.status === 'CANCELADO') c++;
+  });
+  document.getElementById('cnt-pendente').textContent  = p;
+  document.getElementById('cnt-ativo').textContent     = a;
+  document.getElementById('cnt-usado').textContent     = u;
+  document.getElementById('cnt-cancelado').textContent = c;
+  document.getElementById('header-sub').textContent    = 'Total: ' + todosIngressos.length + ' ingressos';
+}
+
+function atualizarStats(data) {
+  if (data.pendentes  !== undefined) document.getElementById('cnt-pendente').textContent  = data.pendentes;
+  if (data.ativos     !== undefined) document.getElementById('cnt-ativo').textContent     = data.ativos;
+  if (data.usados     !== undefined) document.getElementById('cnt-usado').textContent     = data.usados;
+  if (data.cancelados !== undefined) document.getElementById('cnt-cancelado').textContent = data.cancelados;
+}
+
+// ── Filtro ───────────────────────────────────────────────────
+function filtrar(f) {
+  filtroAtual = filtroAtual === f ? 'TODOS' : f;
+  document.querySelectorAll('.stat').forEach(function(el) { el.classList.remove('ativo-filtro'); });
+  if (filtroAtual !== 'TODOS') {
+    document.getElementById('stat-' + filtroAtual.toLowerCase()).classList.add('ativo-filtro');
+  }
+  renderLista();
+}
+
+// ── Render ───────────────────────────────────────────────────
+function renderLista() {
+  var busca = document.getElementById('busca').value.toLowerCase();
+  var lista = todosIngressos.filter(function(i) {
+    var matchFiltro = filtroAtual === 'TODOS' || i.status === filtroAtual;
+    var matchBusca  = !busca ||
+      i.nome.toLowerCase().includes(busca) ||
+      i.id.toLowerCase().includes(busca) ||
+      i.tipo.toLowerCase().includes(busca) ||
+      i.contato.toLowerCase().includes(busca);
+    return matchFiltro && matchBusca;
+  });
+
+  var el = document.getElementById('lista');
+
+  if (lista.length === 0) {
+    el.innerHTML = '<div class="lista-vazia"><div class="icon">🔍</div>Nenhum ingresso encontrado</div>';
+    return;
+  }
+
+  el.innerHTML = lista.map(function(i) {
+    var acoes = '';
+    if (i.status === 'PENDENTE') {
+      acoes = '<div class="card-acoes">' +
+        '<button class="btn-aprovar"  onclick="aprovar(\'' + i.id + '\')">✅ Aprovar</button>' +
+        '<button class="btn-rejeitar" onclick="rejeitar(\'' + i.id + '\')">❌ Rejeitar</button>' +
+        '</div>';
+    } else if (i.status === 'ATIVO') {
+      acoes = '<div class="card-acoes">' +
+        '<button class="btn-cancelar-card" onclick="cancelar(\'' + i.id + '\')">🚫 Cancelar ingresso</button>' +
+        '</div>';
+    }
+
+    return '<div class="ingresso-card ' + i.status.toLowerCase() + '">' +
+      '<div class="card-top">' +
+        '<div><div class="card-nome">' + i.nome + '</div><div class="card-id">' + i.id + '</div></div>' +
+        '<span class="badge ' + i.status.toLowerCase() + '">' + i.status + '</span>' +
+      '</div>' +
+      '<div class="card-info">' +
+        '<div class="card-info-item"><span class="k">Tipo</span><span class="v">' + i.tipo + '</span></div>' +
+        '<div class="card-info-item"><span class="k">Pagamento</span><span class="v">' + i.pagamento + '</span></div>' +
+        '<div class="card-info-item"><span class="k">Valor</span><span class="v">R$ ' + (parseFloat(i.valor)||0).toFixed(2).replace('.',',') + '</span></div>' +
+        '<div class="card-info-item"><span class="k">Compra</span><span class="v">' + i.dataCompra + '</span></div>' +
+        '<div class="card-info-item" style="grid-column:span 2"><span class="k">Contato</span><span class="v">' + i.contato + '</span></div>' +
+        (i.obs ? '<div class="card-info-item" style="grid-column:span 2"><span class="k">Obs</span><span class="v">' + i.obs + '</span></div>' : '') +
+      '</div>' +
+      acoes +
+    '</div>';
+  }).join('');
+}
+
+// ── Ações ────────────────────────────────────────────────────
+async function aprovar(id) {
+  if (!confirm('Aprovar ingresso ' + id + '?')) return;
+  mostrarLoading(true);
+  try {
+    var res  = await fetch(CONFIG.API_URL, { method: 'POST', body: JSON.stringify({ acao: 'aprovar', id: id, senha: senhaOrg }) });
+    var data = await res.json();
+    if (data.ok) {
+      atualizarLocal(id, 'ATIVO');
+      toast('✅ Ingresso aprovado!', 'verde');
+    } else { toast('Erro: ' + data.erro, 'vermelho'); }
+  } catch(e) { toast('Erro de conexão', 'vermelho'); }
+  mostrarLoading(false);
+}
+
+async function rejeitar(id) {
+  var motivo = prompt('Motivo da rejeição (opcional):') || 'Pagamento não confirmado';
+  mostrarLoading(true);
+  try {
+    var res  = await fetch(CONFIG.API_URL, { method: 'POST', body: JSON.stringify({ acao: 'rejeitar', id: id, senha: senhaOrg, obs: motivo }) });
+    var data = await res.json();
+    if (data.ok) {
+      atualizarLocal(id, 'CANCELADO', motivo);
+      toast('❌ Ingresso rejeitado', 'vermelho');
+    } else { toast('Erro: ' + data.erro, 'vermelho'); }
+  } catch(e) { toast('Erro de conexão', 'vermelho'); }
+  mostrarLoading(false);
+}
+
+async function cancelar(id) {
+  if (!confirm('Cancelar ingresso ' + id + '? Esta ação não pode ser desfeita.')) return;
+  mostrarLoading(true);
+  try {
+    var res  = await fetch(CONFIG.API_URL, { method: 'POST', body: JSON.stringify({ acao: 'cancelar', id: id, senha: senhaOrg }) });
+    var data = await res.json();
+    if (data.ok) {
+      atualizarLocal(id, 'CANCELADO');
+      toast('🚫 Ingresso cancelado', 'vermelho');
+    } else { toast('Erro: ' + data.erro, 'vermelho'); }
+  } catch(e) { toast('Erro de conexão', 'vermelho'); }
+  mostrarLoading(false);
+}
+
+function atualizarLocal(id, novoStatus, obs) {
+  todosIngressos = todosIngressos.map(function(i) {
+    if (i.id === id) { i.status = novoStatus; if (obs) i.obs = obs; }
+    return i;
+  });
+  atualizarContadores();
+  renderLista();
+}
+
+// ── Helpers ──────────────────────────────────────────────────
+function mostrarLoading(show) {
+  document.getElementById('loading').className = 'loading-overlay' + (show ? ' show' : '');
+}
+
+function toast(msg, cor) {
+  var el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className   = 'toast ' + (cor || '') + ' show';
+  setTimeout(function() { el.className = 'toast ' + (cor || ''); }, 3000);
+}
+</script>
+</body>
+</html>

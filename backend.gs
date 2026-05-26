@@ -6,9 +6,10 @@
 //    - Quem tem acesso: Qualquer pessoa
 // ============================================================
 
-var SHEET_ID = 'COLE_O_ID_DA_SUA_PLANILHA_AQUI';
-var SHEET_NAME = 'Ingressos';
-var SENHA_PORTEIRO = '1234'; // Troque por uma senha segura
+var SHEET_ID        = 'COLE_O_ID_DA_SUA_PLANILHA_AQUI';
+var SHEET_NAME      = 'Ingressos';
+var SENHA_PORTEIRO  = 'Cbc@2026*';
+var SENHA_ORGANIZADOR = 'Org@2026*'; // Troque por uma senha segura
 
 // ── Ponto de entrada HTTP ────────────────────────────────────
 function doPost(e) {
@@ -19,6 +20,10 @@ function doPost(e) {
     if (acao === 'comprar')    return resposta(comprarIngresso(data));
     if (acao === 'validar')    return resposta(validarIngresso(data));
     if (acao === 'dashboard')  return resposta(getDashboard(data));
+    if (acao === 'listar')     return resposta(listarIngressos(data));
+    if (acao === 'aprovar')    return resposta(aprovarIngresso(data));
+    if (acao === 'rejeitar')   return resposta(rejeitarIngresso(data));
+    if (acao === 'cancelar')   return resposta(cancelarIngresso(data));
 
     return resposta({ ok: false, erro: 'Ação desconhecida' });
   } catch (err) {
@@ -33,15 +38,13 @@ function doGet(e) {
 // ── Comprar ingresso ─────────────────────────────────────────
 function comprarIngresso(data) {
   var sheet = getSheet();
-  var id = gerarID();
+  var id    = gerarID();
   var agora = new Date();
 
-  // Valida campos obrigatórios
   if (!data.nome || !data.contato || !data.tipo || !data.pagamento) {
     return { ok: false, erro: 'Campos obrigatórios faltando' };
   }
 
-  // Verifica limite de ingressos por tipo
   var limite = getLimite(data.tipo);
   if (limite > 0) {
     var vendidos = contarPorTipo(sheet, data.tipo);
@@ -50,29 +53,100 @@ function comprarIngresso(data) {
     }
   }
 
+  // PIX e Dinheiro ficam PENDENTE; Débito/Crédito ficam PENDENTE também
+  // A organização aprova todos via painel
+  var status = 'PENDENTE';
+
   var linha = [
-    id,                          // A - ID único
-    data.nome,                   // B - Nome
-    data.contato,                // C - WhatsApp ou e-mail
-    data.tipo,                   // D - Tipo (inteira, meia, VIP)
-    data.pagamento,              // E - Forma de pagamento
-    data.valor || '',            // F - Valor pago
-    'ATIVO',                     // G - Status
-    Utilities.formatDate(agora, 'America/Sao_Paulo', 'dd/MM/yyyy HH:mm'), // H - Data compra
-    '',                          // I - Data uso
-    data.paymentId || ''         // J - ID pagamento Mercado Pago
+    id,
+    data.nome,
+    data.contato,
+    data.tipo,
+    data.pagamento,
+    data.valor || '',
+    status,
+    Utilities.formatDate(agora, 'America/Sao_Paulo', 'dd/MM/yyyy HH:mm'),
+    '',   // Data uso
+    data.paymentId || '',
+    ''    // Observação
   ];
 
   sheet.appendRow(linha);
 
-  return {
-    ok: true,
-    id: id,
-    nome: data.nome,
-    tipo: data.tipo,
-    valor: data.valor,
-    dataCompra: linha[7]
-  };
+  return { ok: true, id: id, nome: data.nome, tipo: data.tipo, valor: data.valor, status: status };
+}
+
+// ── Listar ingressos (organizador) ───────────────────────────
+function listarIngressos(data) {
+  if (data.senha !== SENHA_ORGANIZADOR) {
+    return { ok: false, erro: 'Senha incorreta' };
+  }
+
+  var sheet  = getSheet();
+  var linhas = sheet.getDataRange().getValues();
+  var lista  = [];
+  var filtro = data.filtro || 'TODOS'; // TODOS, PENDENTE, ATIVO, USADO, CANCELADO
+
+  for (var i = 1; i < linhas.length; i++) {
+    if (!linhas[i][0]) continue;
+    var status = linhas[i][6];
+    if (filtro !== 'TODOS' && status !== filtro) continue;
+
+    lista.push({
+      id:        linhas[i][0],
+      nome:      linhas[i][1],
+      contato:   linhas[i][2],
+      tipo:      linhas[i][3],
+      pagamento: linhas[i][4],
+      valor:     linhas[i][5],
+      status:    status,
+      dataCompra: linhas[i][7],
+      dataUso:   linhas[i][8],
+      obs:       linhas[i][10] || ''
+    });
+  }
+
+  // Mais recentes primeiro
+  lista.reverse();
+  return { ok: true, lista: lista, total: lista.length };
+}
+
+// ── Aprovar ingresso ─────────────────────────────────────────
+function aprovarIngresso(data) {
+  if (data.senha !== SENHA_ORGANIZADOR) {
+    return { ok: false, erro: 'Senha incorreta' };
+  }
+  return mudarStatus(data.id, 'ATIVO', data.obs || 'Aprovado pela organização');
+}
+
+// ── Rejeitar ingresso ────────────────────────────────────────
+function rejeitarIngresso(data) {
+  if (data.senha !== SENHA_ORGANIZADOR) {
+    return { ok: false, erro: 'Senha incorreta' };
+  }
+  return mudarStatus(data.id, 'CANCELADO', data.obs || 'Rejeitado pela organização');
+}
+
+// ── Cancelar ingresso ────────────────────────────────────────
+function cancelarIngresso(data) {
+  if (data.senha !== SENHA_ORGANIZADOR) {
+    return { ok: false, erro: 'Senha incorreta' };
+  }
+  return mudarStatus(data.id, 'CANCELADO', data.obs || 'Cancelado pela organização');
+}
+
+function mudarStatus(id, novoStatus, obs) {
+  var sheet  = getSheet();
+  var linhas = sheet.getDataRange().getValues();
+
+  for (var i = 1; i < linhas.length; i++) {
+    if (linhas[i][0] === id) {
+      sheet.getRange(i + 1, 7).setValue(novoStatus);
+      sheet.getRange(i + 1, 11).setValue(obs);
+      return { ok: true, id: id, status: novoStatus };
+    }
+  }
+  return { ok: false, erro: 'Ingresso não encontrado' };
 }
 
 // ── Validar ingresso (porteiro) ──────────────────────────────
@@ -81,8 +155,8 @@ function validarIngresso(data) {
     return { ok: false, erro: 'Senha do porteiro incorreta', codigo: 'SENHA' };
   }
 
-  var sheet = getSheet();
-  var id = data.id;
+  var sheet  = getSheet();
+  var id     = data.id;
   var linhas = sheet.getDataRange().getValues();
 
   for (var i = 1; i < linhas.length; i++) {
@@ -91,63 +165,52 @@ function validarIngresso(data) {
       var nome   = linhas[i][1];
       var tipo   = linhas[i][3];
 
-      if (status === 'USADO') {
-        var dataUso = linhas[i][8];
-        return {
-          ok: false,
-          codigo: 'JA_USADO',
-          nome: nome,
-          tipo: tipo,
-          dataUso: dataUso,
-          erro: 'Ingresso já utilizado em ' + dataUso
-        };
+      if (status === 'PENDENTE') {
+        return { ok: false, codigo: 'PENDENTE', nome: nome, tipo: tipo, erro: 'Ingresso ainda não aprovado pela organização' };
       }
-
+      if (status === 'USADO') {
+        return { ok: false, codigo: 'JA_USADO', nome: nome, tipo: tipo, dataUso: linhas[i][8], erro: 'Ingresso já utilizado em ' + linhas[i][8] };
+      }
       if (status === 'CANCELADO') {
         return { ok: false, codigo: 'CANCELADO', nome: nome, erro: 'Ingresso cancelado' };
       }
 
-      // Marca como USADO
+      // ATIVO → marca como USADO
       var agora = Utilities.formatDate(new Date(), 'America/Sao_Paulo', 'dd/MM/yyyy HH:mm:ss');
       sheet.getRange(i + 1, 7).setValue('USADO');
       sheet.getRange(i + 1, 9).setValue(agora);
 
-      return {
-        ok: true,
-        codigo: 'LIBERADO',
-        nome: nome,
-        tipo: tipo,
-        dataUso: agora
-      };
+      return { ok: true, codigo: 'LIBERADO', nome: nome, tipo: tipo, dataUso: agora };
     }
   }
 
   return { ok: false, codigo: 'NAO_ENCONTRADO', erro: 'Ingresso não encontrado' };
 }
 
-// ── Dashboard resumo ─────────────────────────────────────────
+// ── Dashboard ────────────────────────────────────────────────
 function getDashboard(data) {
-  if (data.senha !== SENHA_PORTEIRO) {
+  if (data.senha !== SENHA_PORTEIRO && data.senha !== SENHA_ORGANIZADOR) {
     return { ok: false, erro: 'Senha incorreta' };
   }
 
-  var sheet = getSheet();
+  var sheet  = getSheet();
   var linhas = sheet.getDataRange().getValues();
-  var total = 0, ativos = 0, usados = 0, cancelados = 0;
+  var total = 0, pendentes = 0, ativos = 0, usados = 0, cancelados = 0;
   var porTipo = {};
 
   for (var i = 1; i < linhas.length; i++) {
     if (!linhas[i][0]) continue;
     total++;
     var status = linhas[i][6];
-    var tipo = linhas[i][3];
+    var tipo   = linhas[i][3];
+    if (status === 'PENDENTE')  pendentes++;
     if (status === 'ATIVO')     ativos++;
     if (status === 'USADO')     usados++;
     if (status === 'CANCELADO') cancelados++;
     porTipo[tipo] = (porTipo[tipo] || 0) + 1;
   }
 
-  return { ok: true, total: total, ativos: ativos, usados: usados, cancelados: cancelados, porTipo: porTipo };
+  return { ok: true, total: total, pendentes: pendentes, ativos: ativos, usados: usados, cancelados: cancelados, porTipo: porTipo };
 }
 
 // ── Helpers ──────────────────────────────────────────────────
@@ -158,21 +221,18 @@ function getSheet() {
 function gerarID() {
   var chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
   var id = 'QRM-';
-  for (var i = 0; i < 8; i++) {
-    id += chars.charAt(Math.floor(Math.random() * chars.length));
-  }
+  for (var i = 0; i < 8; i++) id += chars.charAt(Math.floor(Math.random() * chars.length));
   return id;
 }
 
 function getLimite(tipo) {
-  // 0 = sem limite. Ajuste conforme necessário.
   var limites = { 'Inteira': 0, 'Meia': 0, 'VIP': 50, 'Criança': 0 };
   return limites[tipo] || 0;
 }
 
 function contarPorTipo(sheet, tipo) {
   var linhas = sheet.getDataRange().getValues();
-  var count = 0;
+  var count  = 0;
   for (var i = 1; i < linhas.length; i++) {
     if (linhas[i][3] === tipo && linhas[i][6] !== 'CANCELADO') count++;
   }
@@ -180,30 +240,18 @@ function contarPorTipo(sheet, tipo) {
 }
 
 function resposta(obj) {
-  return ContentService
-    .createTextOutput(JSON.stringify(obj))
-    .setMimeType(ContentService.MimeType.JSON);
+  return ContentService.createTextOutput(JSON.stringify(obj)).setMimeType(ContentService.MimeType.JSON);
 }
 
 // ── Configurar planilha (rode uma vez manualmente) ───────────
 function configurarPlanilha() {
-  var ss = SpreadsheetApp.openById(SHEET_ID);
+  var ss    = SpreadsheetApp.openById(SHEET_ID);
   var sheet = ss.getSheetByName(SHEET_NAME);
+  if (!sheet) sheet = ss.insertSheet(SHEET_NAME);
 
-  if (!sheet) {
-    sheet = ss.insertSheet(SHEET_NAME);
-  }
-
-  var headers = ['ID', 'Nome', 'Contato', 'Tipo', 'Pagamento', 'Valor', 'Status', 'Data Compra', 'Data Uso', 'ID Pagamento'];
+  var headers = ['ID', 'Nome', 'Contato', 'Tipo', 'Pagamento', 'Valor', 'Status', 'Data Compra', 'Data Uso', 'ID Pagamento', 'Observação'];
   sheet.getRange(1, 1, 1, headers.length).setValues([headers]);
-  sheet.getRange(1, 1, 1, headers.length)
-    .setFontWeight('bold')
-    .setBackground('#1a1a2e')
-    .setFontColor('#ffffff');
+  sheet.getRange(1, 1, 1, headers.length).setFontWeight('bold').setBackground('#1a1a2e').setFontColor('#ffffff');
   sheet.setFrozenRows(1);
-  sheet.setColumnWidth(1, 120);
-  sheet.setColumnWidth(2, 180);
-  sheet.setColumnWidth(3, 200);
-
   Logger.log('Planilha configurada!');
 }

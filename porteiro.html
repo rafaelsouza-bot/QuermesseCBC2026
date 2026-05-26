@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <title>Porteiro — Quermesse 2025</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jsQR/1.4.0/jsQR.min.js"></script>
+
 <style>
   :root {
     --bg: #0a0a0f;
@@ -450,7 +450,7 @@ function iniciarCamera() {
   document.getElementById('scanner-status').textContent = '📷 Iniciando câmera...';
 
   navigator.mediaDevices.getUserMedia({
-    video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } }
+    video: { facingMode: 'environment', width: { ideal: 1920 }, height: { ideal: 1080 }, focusMode: 'continuous' }
   })
   .then(function(s) {
     stream = s;
@@ -458,8 +458,7 @@ function iniciarCamera() {
     video.srcObject = s;
     video.onloadedmetadata = function() {
       video.play();
-      document.getElementById('scanner-status').textContent = '📷 Aponte para o QR Code do ingresso';
-      requestAnimationFrame(scanFrame);
+      iniciarDetector();
     };
   })
   .catch(function(err) {
@@ -473,25 +472,58 @@ function pararCamera() {
   if (animFrame) { cancelAnimationFrame(animFrame); animFrame = null; }
 }
 
-function scanFrame() {
-  if (!scanning) return;
+// BarcodeDetector — API nativa do SO, muito mais confiável
+var detector = null;
+
+function iniciarDetector() {
+  if ('BarcodeDetector' in window) {
+    detector = new BarcodeDetector({ formats: ['qr_code'] });
+    document.getElementById('scanner-status').textContent = '📷 Aponte para o QR Code do ingresso';
+    scanFrame();
+  } else {
+    // Fallback: jsQR via CDN
+    document.getElementById('scanner-status').textContent = '⚠️ Usando leitor alternativo...';
+    var s = document.createElement('script');
+    s.src = 'https://cdnjs.cloudflare.com/ajax/libs/jsQR/1.4.0/jsQR.min.js';
+    s.onload = function() { scanFrameFallback(); };
+    document.head.appendChild(s);
+  }
+}
+
+async function scanFrame() {
+  if (!scanning || processando) return;
+  var video = document.getElementById('video');
+  if (video.readyState === video.HAVE_ENOUGH_DATA) {
+    try {
+      var codes = await detector.detect(video);
+      if (codes.length > 0 && !processando) {
+        validarIngresso(codes[0].rawValue);
+        return;
+      }
+    } catch(e) {}
+  }
+  animFrame = requestAnimationFrame(scanFrame);
+}
+
+function scanFrameFallback() {
+  if (!scanning || processando) return;
   var video  = document.getElementById('video');
   var canvas = document.getElementById('canvas');
-
   if (video.readyState === video.HAVE_ENOUGH_DATA) {
     canvas.width  = video.videoWidth;
     canvas.height = video.videoHeight;
     var ctx = canvas.getContext('2d');
     ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
     var imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-    var code = jsQR(imageData.data, imageData.width, imageData.height, { inversionAttempts: 'dontInvert' });
-
-    if (code && !processando) {
-      validarIngresso(code.data);
-      return;
+    if (typeof jsQR !== 'undefined') {
+      var code = jsQR(imageData.data, imageData.width, imageData.height, { inversionAttempts: 'attemptBoth' });
+      if (code && !processando) {
+        validarIngresso(code.data);
+        return;
+      }
     }
   }
-  animFrame = requestAnimationFrame(scanFrame);
+  animFrame = requestAnimationFrame(scanFrameFallback);
 }
 
 // ── Validação ────────────────────────────────────────────────
@@ -502,14 +534,19 @@ async function validarIngresso(id) {
   document.getElementById('scanner-status').textContent = '🔍 Validando...';
 
   try {
+    var controller = new AbortController();
+    var timeout = setTimeout(function() { controller.abort(); }, 10000);
     var res = await fetch(CONFIG.API_URL, {
       method: 'POST',
-      body: JSON.stringify({ acao: 'validar', id: id, senha: senhaPorteiro })
+      body: JSON.stringify({ acao: 'validar', id: id, senha: senhaPorteiro }),
+      signal: controller.signal
     });
+    clearTimeout(timeout);
     var data = await res.json();
     mostrarResultado(data, id);
   } catch(err) {
-    mostrarResultado({ ok: false, codigo: 'ERRO', erro: 'Sem conexão com o servidor' }, id);
+    var msg = err.name === 'AbortError' ? 'Servidor demorou demais. Verifique a internet.' : 'Sem conexão com o servidor. Verifique a internet e tente novamente.';
+    mostrarResultado({ ok: false, codigo: 'ERRO', erro: msg }, id);
   }
 }
 
@@ -588,7 +625,11 @@ function voltarScanner() {
   processando = false;
   scanning = true;
   document.getElementById('scanner-status').textContent = '📷 Aponte para o QR Code do ingresso';
-  animFrame = requestAnimationFrame(scanFrame);
+  if (detector) {
+    animFrame = requestAnimationFrame(scanFrame);
+  } else {
+    animFrame = requestAnimationFrame(scanFrameFallback);
+  }
 }
 
 // ── Manual ───────────────────────────────────────────────────

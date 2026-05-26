@@ -9,7 +9,7 @@
 var SHEET_ID        = '174zZLsKEhbpcfLXtnWn2X8xJ0KQBA9LYkBEEbMTVC4I';
 var SHEET_NAME      = 'Ingressos';
 var SENHA_PORTEIRO  = 'Cbc@2026';
-var SENHA_ORGANIZADOR = 'Org@2026*'; // Troque por uma senha segura
+var SENHA_ORGANIZADOR = 'Org@2026'; // Troque por uma senha segura
 
 // ── Ponto de entrada HTTP ────────────────────────────────────
 function doPost(e) {

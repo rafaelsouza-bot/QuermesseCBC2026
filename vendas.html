@@ -266,6 +266,10 @@
     <label>WhatsApp</label>
     <input type="tel" id="whatsapp" placeholder="(51) 99999-9999">
   </div>
+  <div class="form-group">
+    <label>E-mail <span style="color:var(--azul)">*</span> — receberá o QR Code de entrada</label>
+    <input type="email" id="email" placeholder="seu@email.com">
+  </div>
 
   <!-- PIX info -->
   <div style="background:var(--card2);border:1px solid var(--borda);border-radius:10px;padding:14px 16px;margin-bottom:20px;font-size:13px;color:var(--texto2);line-height:1.6">
@@ -346,8 +350,10 @@ function mudarQtd(delta) {
 async function comprar() {
   var nome     = document.getElementById('nome').value.trim();
   var whatsapp = document.getElementById('whatsapp').value.trim();
+  var email    = document.getElementById('email').value.trim();
   if (!nome)     return alert('Por favor informe seu nome.');
   if (!whatsapp) return alert('Por favor informe seu WhatsApp.');
+  if (!email || !email.includes('@')) return alert('Por favor informe um e-mail válido. Você receberá o QR Code de entrada nele.');
 
   var btn = document.getElementById('btn-comprar');
   btn.disabled = true; btn.classList.add('loading');
@@ -359,6 +365,7 @@ async function comprar() {
         acao: 'comprar',
         nome: nome,
         contato: whatsapp,
+        email: email,
         tipo: 'Ingresso',
         pagamento: 'PIX',
         valor: CONFIG.VALOR * qtd,
@@ -367,7 +374,7 @@ async function comprar() {
     });
     var data = await res.json();
     if (!data.ok) throw new Error(data.erro || 'Erro ao registrar pedido');
-    pedidoAtual = { ids: data.ids, nome: nome, whatsapp: whatsapp, qtd: qtd, total: CONFIG.VALOR * qtd };
+    pedidoAtual = { ids: data.ids, nome: nome, whatsapp: whatsapp, email: email, qtd: qtd, total: CONFIG.VALOR * qtd };
     abrirModal();
   } catch(err) {
     alert('Erro: ' + err.message);
@@ -401,6 +408,7 @@ function abrirModal() {
     '<div><span class="k">Nome</span><span class="v">' + pedidoAtual.nome + '</span></div>' +
     '<div><span class="k">Ingressos</span><span class="v">' + pedidoAtual.qtd + 'x</span></div>' +
     '<div><span class="k">IDs</span><span class="v" style="font-size:11px;font-family:monospace">' + ids + '</span></div>' +
+    '<div><span class="k">E-mail QR Code</span><span class="v" style="font-size:12px">' + pedidoAtual.email + '</span></div>' +
     '<div><span class="k">Total</span><span class="v" style="color:var(--azul)">R$ ' + total + '</span></div>';
 
   document.getElementById('overlay').classList.add('aberto');

@@ -397,10 +397,62 @@ async function aprovar(id) {
     var data = await res.json();
     if (data.ok) {
       atualizarLocal(id, 'ATIVO');
-      toast('✅ Ingresso aprovado!', 'verde');
+      // Feedback sobre o e-mail
+      if (data.emailEnviado) {
+        toast('✅ Aprovado! E-mail com QR Code enviado para ' + data.email, 'verde');
+      } else if (data.email === '') {
+        toast('✅ Aprovado! (cliente sem e-mail cadastrado)', 'verde');
+      } else {
+        toast('✅ Aprovado! ' + (data.avisoEmail || ''), 'verde');
+      }
+      // Dispara WhatsApp automaticamente com orientações
+      setTimeout(function() { enviarWhatsAppAprovacao(data, id); }, 800);
     } else { toast('Erro: ' + data.erro, 'vermelho'); }
   } catch(e) { toast('Erro de conexão', 'vermelho'); }
   mostrarLoading(false);
+}
+
+function enviarWhatsAppAprovacao(data, id) {
+  var nome    = data.nome    || 'Cliente';
+  var email   = data.email   || '';
+  var contato = data.contato || '';
+
+  var num = contato.replace(/\D/g, '');
+  if (!num) return; // sem número, não abre
+  if (num.length <= 11) num = '55' + num;
+
+  var msg;
+  if (email) {
+    msg =
+      '🎡 *104ª Quermesse Solidária CBC*\n\n' +
+      'Olá, *' + nome + '*! 😊\n\n' +
+      '✅ Seu pagamento foi *confirmado* e seu ingresso está aprovado!\n\n' +
+      '📧 Enviamos o *QR Code de entrada* para o e-mail:\n' +
+      '*' + email + '*\n\n' +
+      '📋 *Como usar no dia do evento (04/07):*\n' +
+      '1️⃣ Abra o e-mail no seu celular ao chegar\n' +
+      '2️⃣ Mostre o QR Code ao porteiro\n' +
+      '3️⃣ Aguarde a leitura — entrada liberada!\n' +
+      '4️⃣ Cada QR Code é de *uso único*\n\n' +
+      '📍 *Local:* Ramiro Barcelos, 996 — Porto Alegre\n' +
+      '🕙 *Horário:* 11h às 16h\n\n' +
+      '⚠️ Não encontrou o e-mail? Verifique a caixa de *spam/lixo eletrônico*.\n\n' +
+      'Até lá! 🎉';
+  } else {
+    msg =
+      '🎡 *104ª Quermesse Solidária CBC*\n\n' +
+      'Olá, *' + nome + '*! 😊\n\n' +
+      '✅ Seu pagamento foi *confirmado* e seu ingresso está aprovado!\n\n' +
+      '🔑 *ID do seu ingresso:* `' + id + '`\n\n' +
+      '📋 *Como usar no dia do evento (04/07):*\n' +
+      '1️⃣ Informe o seu ID ao porteiro na entrada\n' +
+      '2️⃣ Aguarde a validação — entrada liberada!\n\n' +
+      '📍 *Local:* Ramiro Barcelos, 996 — Porto Alegre\n' +
+      '🕙 *Horário:* 11h às 16h\n\n' +
+      'Até lá! 🎉';
+  }
+
+  window.open('https://wa.me/' + num + '?text=' + encodeURIComponent(msg), '_blank');
 }
 
 async function rejeitar(id) {
@@ -435,18 +487,25 @@ async function aprovarLote(ids) {
   if (!confirm('Aprovar ' + ids.length + ' ingressos de uma vez?')) return;
   mostrarLoading(true);
   var erros = 0;
+  var aprovados = [];
   for (var i = 0; i < ids.length; i++) {
     try {
       var res  = await fetch(CONFIG.API_URL, { method: 'POST', body: JSON.stringify({ acao: 'aprovar', id: ids[i], senha: senhaOrg }) });
       var data = await res.json();
-      if (data.ok) { atualizarLocalSilencioso(ids[i], 'ATIVO'); }
-      else erros++;
+      if (data.ok) {
+        atualizarLocalSilencioso(ids[i], 'ATIVO');
+        aprovados.push({ data: data, id: ids[i] });
+      } else erros++;
     } catch(e) { erros++; }
   }
   mostrarLoading(false);
-  if (erros === 0) toast('✅ ' + ids.length + ' ingressos aprovados!', 'verde');
+  if (erros === 0) toast('✅ ' + ids.length + ' ingressos aprovados! E-mails enviados.', 'verde');
   else toast('⚠️ ' + erros + ' erros ao aprovar', 'vermelho');
   renderLista();
+  // Dispara WhatsApp para cada aprovado (com delay para não bloquear)
+  aprovados.forEach(function(item, idx) {
+    setTimeout(function() { enviarWhatsAppAprovacao(item.data, item.id); }, (idx + 1) * 1200);
+  });
 }
 
 function atualizarLocalSilencioso(id, novoStatus) {

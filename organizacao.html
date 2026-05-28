@@ -233,6 +233,7 @@
     padding: 16px; font-size: 16px; font-weight: 800;
     cursor: pointer; margin-bottom: 10px;
     display: flex; align-items: center; justify-content: center; gap: 8px;
+    text-decoration: none;
   }
   .btn-wpp-aprovar:hover { background: #1da851; }
   .btn-pular {
@@ -261,7 +262,7 @@
 
 <script>
 var CONFIG = {
-  API_URL: 'https://script.google.com/macros/s/AKfycbzFBD1-tFO1fZToTCcVBDZ6jiuZvel0JzlwMVl8_QJBHIuYdSzzrmNsOvlY6w4J_RDgQg/exec',
+  API_URL: 'https://script.google.com/macros/s/AKfycbxYIb8Oq28qvGQzWRQ1TZSt69NsRF2aHtG0Kh9IIvE_ZjFbCsBDur8re_2PAThHDyfh/exec',
   SENHA: 'Org@2026'
 };
 </script>
@@ -462,48 +463,7 @@ async function aprovar(id) {
   mostrarLoading(false);
 }
 
-function enviarWhatsAppAprovacao(data, id) {
-  var nome    = data.nome    || 'Cliente';
-  var email   = data.email   || '';
-  var contato = data.contato || '';
 
-  var num = contato.replace(/\D/g, '');
-  if (!num) return; // sem número, não abre
-  if (num.length <= 11) num = '55' + num;
-
-  var msg;
-  if (email) {
-    msg =
-      '🎡 *104ª Quermesse Solidária CBC*\n\n' +
-      'Olá, *' + nome + '*! 😊\n\n' +
-      '✅ Seu pagamento foi *confirmado* e seu ingresso está aprovado!\n\n' +
-      '📧 Enviamos o *QR Code de entrada* para o e-mail:\n' +
-      '*' + email + '*\n\n' +
-      '📋 *Como usar no dia do evento (04/07):*\n' +
-      '1️⃣ Abra o e-mail no seu celular ao chegar\n' +
-      '2️⃣ Mostre o QR Code ao porteiro\n' +
-      '3️⃣ Aguarde a leitura — entrada liberada!\n' +
-      '4️⃣ Cada QR Code é de *uso único*\n\n' +
-      '📍 *Local:* Ramiro Barcelos, 996 — Porto Alegre\n' +
-      '🕙 *Horário:* 11h às 16h\n\n' +
-      '⚠️ Não encontrou o e-mail? Verifique a caixa de *spam/lixo eletrônico*.\n\n' +
-      'Até lá! 🎉';
-  } else {
-    msg =
-      '🎡 *104ª Quermesse Solidária CBC*\n\n' +
-      'Olá, *' + nome + '*! 😊\n\n' +
-      '✅ Seu pagamento foi *confirmado* e seu ingresso está aprovado!\n\n' +
-      '🔑 *ID do seu ingresso:* `' + id + '`\n\n' +
-      '📋 *Como usar no dia do evento (04/07):*\n' +
-      '1️⃣ Informe o seu ID ao porteiro na entrada\n' +
-      '2️⃣ Aguarde a validação — entrada liberada!\n\n' +
-      '📍 *Local:* Ramiro Barcelos, 996 — Porto Alegre\n' +
-      '🕙 *Horário:* 11h às 16h\n\n' +
-      'Até lá! 🎉';
-  }
-
-  window.open('https://wa.me/' + num + '?text=' + encodeURIComponent(msg), '_blank');
-}
 
 async function rejeitar(id) {
   var motivo = prompt('Motivo da rejeição (opcional):') || 'Pagamento não confirmado';
@@ -659,23 +619,71 @@ function atualizarContadorLote() {
   });
 }
 
-function dispararProximoWpp() {
-  if (_filaIdx >= _filaWpp.length) { fecharAprovacaoModal(); return; }
+// Chamado diretamente pelo onclick do <a> — retorna false para não navegar
+// O href já foi setado com a URL correta antes do clique
+function prepararLinkWpp(el) {
+  if (_filaIdx >= _filaWpp.length) { fecharAprovacaoModal(); return false; }
   var item = _filaWpp[_filaIdx];
-  enviarWhatsAppAprovacao(item.data, item.id);
+  var url  = montarUrlWpp(item.data, item.id);
+  if (!url) { toast('Sem número de WhatsApp para este cliente', 'vermelho'); return false; }
+  el.href = url; // define o href no momento exato do clique — navegador aceita
   _filaIdx++;
   if (_filaIdx >= _filaWpp.length) {
-    document.getElementById('ap-btn-texto').textContent = 'Concluído ✓';
-    document.getElementById('ap-btn-wpp').style.background = '#1da851';
-    if (_filaWpp.length === 1) {
-      setTimeout(fecharAprovacaoModal, 1500);
-    } else {
-      atualizarContadorLote();
-      document.getElementById('ap-lote-contador').textContent = 'Todos notificados! ✅';
-    }
+    setTimeout(function() {
+      document.getElementById('ap-btn-texto').textContent = 'Concluído ✓';
+      document.getElementById('ap-btn-wpp').style.pointerEvents = 'none';
+      document.getElementById('ap-btn-wpp').style.background = '#1da851';
+      if (_filaWpp.length === 1) { setTimeout(fecharAprovacaoModal, 1800); }
+      else {
+        atualizarContadorLote();
+        document.getElementById('ap-lote-contador').textContent = 'Todos notificados! ✅';
+      }
+    }, 100);
   } else {
-    if (_filaWpp.length > 1) atualizarContadorLote();
+    setTimeout(function() { if (_filaWpp.length > 1) atualizarContadorLote(); }, 100);
   }
+  return true; // deixa o <a target="_blank"> navegar normalmente
+}
+
+// Monta a URL do WhatsApp sem abrir nada — só string
+function montarUrlWpp(data, id) {
+  var nome    = data.nome    || 'Cliente';
+  var email   = data.email   || '';
+  var contato = data.contato || '';
+  var num = contato.replace(/\D/g, '');
+  if (!num) return null;
+  if (num.length <= 11) num = '55' + num;
+  var msg;
+  if (email) {
+    msg =
+      '🎡 *104ª Quermesse Solidária CBC*\n\n' +
+      'Olá, *' + nome + '*! 😊\n\n' +
+      '✅ Seu pagamento foi *confirmado* e seu ingresso está aprovado!\n\n' +
+      '📧 Enviamos o *QR Code de entrada* para o e-mail:\n' +
+      '*' + email + '*\n\n' +
+      '📋 *Como usar no dia do evento (04/07):*\n' +
+      '1️⃣ Abra o e-mail no seu celular ao chegar\n' +
+      '2️⃣ Mostre o QR Code ao porteiro\n' +
+      '3️⃣ Aguarde a leitura — entrada liberada!\n' +
+      '4️⃣ Cada QR Code é de *uso único*\n\n' +
+      '📍 *Local:* Ramiro Barcelos, 996 — Porto Alegre\n' +
+      '🕙 *Horário:* 11h às 16h\n\n' +
+      '⚠️ Não encontrou o e-mail? Verifique a caixa de *spam/lixo eletrônico*.\n\n' +
+      'Até lá! 🎉';
+  } else {
+    msg =
+      '🎡 *104ª Quermesse Solidária CBC*\n\n' +
+      'Olá, *' + nome + '*! 😊\n\n' +
+      '✅ Seu pagamento foi *confirmado* e seu ingresso está aprovado!\n\n' +
+      '🔑 *ID do seu ingresso:* `' + id + '`\n\n' +
+      '📋 *Como usar no dia do evento (04/07):*\n' +
+      '1️⃣ Informe o seu ID ao porteiro na entrada\n' +
+      '2️⃣ Aguarde a validação — entrada liberada!\n\n' +
+      '📍 *Local:* Ramiro Barcelos, 996 — Porto Alegre\n' +
+      '🕙 *Horário:* 11h às 16h\n\n' +
+      'Até lá! 🎉';
+  }
+  return 'https://wa.me/' + num + '?text=' + encodeURIComponent(msg);
 }
 
 function fecharAprovacaoModal() {
@@ -694,9 +702,9 @@ function fecharAprovacaoModal() {
     <div class="aprovacao-email-box" id="ap-email-box"></div>
     <div class="lote-fila" id="ap-lote-fila" style="display:none"></div>
     <div class="lote-contador" id="ap-lote-contador" style="display:none"></div>
-    <button class="btn-wpp-aprovar" id="ap-btn-wpp" onclick="dispararProximoWpp()">
+    <a class="btn-wpp-aprovar" id="ap-btn-wpp" href="#" target="_blank" onclick="return prepararLinkWpp(this)">
       <span>📱</span> <span id="ap-btn-texto">Enviar orientação no WhatsApp</span>
-    </button>
+    </a>
     <button class="btn-pular" onclick="fecharAprovacaoModal()">Pular / Fechar</button>
   </div>
 </div>

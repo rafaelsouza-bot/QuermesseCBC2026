@@ -314,8 +314,8 @@
 <!-- ── CONFIG ─────────────────────────────────────── -->
 <script>
 var CONFIG = {
-  API_URL: 'https://script.google.com/macros/s/AKfycbw5Gmb-vP2fWTFibV0RNs9jBBO2onm5pmqO_dIR2UbhWjCWD4RuNSzjemy4PFBr4VKyYQ/exec',
-  SENHA: 'Cbc@2020',
+  API_URL: 'COLE_A_URL_DO_APPS_SCRIPT_AQUI',
+  SENHA: '1234',
   EVENTO: 'Quermesse 2025'
 };
 </script>
@@ -570,10 +570,23 @@ function mostrarResultado(data, id) {
     detalhe.textContent = 'Entrada autorizada!';
     nome.textContent   = data.nome || '—';
     tipo.textContent   = '🎟️ ' + (data.tipo || '');
+    var seqTxt = data.seq ? ' (' + data.seq + ')' : '';
     card.innerHTML =
       '<div><span class="k">ID</span><span>' + id + '</span></div>' +
+      '<div><span class="k">Ingresso</span><span>' + (data.tipo||'') + seqTxt + '</span></div>' +
       '<div><span class="k">Entrada</span><span>' + (data.dataUso || '') + '</span></div>';
     vibrar([100, 50, 100]);
+  } else if (data.codigo === 'PENDENTE') {
+    stats.bloqueados++;
+    tela.className = 'aviso';
+    icon.textContent   = '⏳';
+    titulo.textContent = 'PENDENTE';
+    titulo.className   = 'res-titulo amarelo';
+    detalhe.textContent = 'Pagamento não confirmado!';
+    nome.textContent   = data.nome || '—';
+    tipo.textContent   = '🎟️ ' + (data.tipo || '');
+    card.innerHTML     = '<div><span class="k">ID</span><span>' + id + '</span></div><div><span class="k">Status</span><span>Aguardando aprovação da organização</span></div>';
+    vibrar([200, 100, 200]);
   } else if (data.codigo === 'JA_USADO') {
     stats.bloqueados++;
     tela.className = 'bloqueado';

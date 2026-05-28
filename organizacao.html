@@ -202,7 +202,7 @@
 
 <script>
 var CONFIG = {
-  API_URL: 'https://script.google.com/macros/s/AKfycbw5Gmb-vP2fWTFibV0RNs9jBBO2onm5pmqO_dIR2UbhWjCWD4RuNSzjemy4PFBr4VKyYQ/exec',
+  API_URL: 'https://script.google.com/macros/s/AKfycbyAhHCqLYcFFHa11laD93Rqmf22RjIS_nzBYG-7VyCAo6Je9HmcSvFgSvHh8xHA0tm9zw/exec',
   SENHA: 'Org@2026*'
 };
 </script>
@@ -429,6 +429,32 @@ async function cancelar(id) {
     } else { toast('Erro: ' + data.erro, 'vermelho'); }
   } catch(e) { toast('Erro de conexão', 'vermelho'); }
   mostrarLoading(false);
+}
+
+async function aprovarLote(ids) {
+  if (!confirm('Aprovar ' + ids.length + ' ingressos de uma vez?')) return;
+  mostrarLoading(true);
+  var erros = 0;
+  for (var i = 0; i < ids.length; i++) {
+    try {
+      var res  = await fetch(CONFIG.API_URL, { method: 'POST', body: JSON.stringify({ acao: 'aprovar', id: ids[i], senha: senhaOrg }) });
+      var data = await res.json();
+      if (data.ok) { atualizarLocalSilencioso(ids[i], 'ATIVO'); }
+      else erros++;
+    } catch(e) { erros++; }
+  }
+  mostrarLoading(false);
+  if (erros === 0) toast('✅ ' + ids.length + ' ingressos aprovados!', 'verde');
+  else toast('⚠️ ' + erros + ' erros ao aprovar', 'vermelho');
+  renderLista();
+}
+
+function atualizarLocalSilencioso(id, novoStatus) {
+  todosIngressos = todosIngressos.map(function(i) {
+    if (i.id === id) i.status = novoStatus;
+    return i;
+  });
+  atualizarContadores();
 }
 
 function atualizarLocal(id, novoStatus, obs) {

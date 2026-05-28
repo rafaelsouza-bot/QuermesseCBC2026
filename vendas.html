@@ -35,37 +35,14 @@
     position: absolute; inset: 0;
     background: radial-gradient(ellipse at 50% 0%, rgba(41,171,226,.15) 0%, transparent 70%);
   }
-  .hero-logo {
-    width: 90px; height: 90px;
-    border-radius: 50%;
-    object-fit: cover;
-    border: 3px solid var(--azul);
-    margin-bottom: 14px;
-    position: relative;
-    box-shadow: 0 0 24px rgba(41,171,226,.4);
-  }
-  .hero-badge {
-    display: inline-block;
-    background: var(--azul);
-    color: #fff; font-size: 10px; font-weight: 800;
-    letter-spacing: 2px; text-transform: uppercase;
-    padding: 4px 12px; border-radius: 99px; margin-bottom: 10px;
-  }
+  .hero-badge { display: inline-block; background: var(--azul); color: #fff; font-size: 10px; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; padding: 4px 12px; border-radius: 99px; margin-bottom: 10px; }
   .hero h1 { font-size: clamp(20px, 5vw, 36px); font-weight: 900; line-height: 1.15; color: var(--branco); }
   .hero h1 span { color: var(--azul); }
   .hero-info { display: flex; justify-content: center; gap: 20px; margin-top: 16px; flex-wrap: wrap; }
   .hero-info div { display: flex; align-items: center; gap: 5px; font-size: 13px; color: var(--texto2); }
 
-  /* Banner isenção */
-  .banner-isencao {
-    background: linear-gradient(135deg, #0a3550, #123d54);
-    border-left: 4px solid var(--azul);
-    border-bottom: 1px solid var(--borda);
-    padding: 28px 28px;
-    display: flex; align-items: center; gap: 20px;
-    animation: piscar 1.2s infinite;
-  }
-  @keyframes piscar { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+  .banner-isencao { background: linear-gradient(135deg, #0a3550, #123d54); border-left: 4px solid var(--azul); border-bottom: 1px solid var(--borda); padding: 28px; display: flex; align-items: center; gap: 20px; animation: piscar 1.2s infinite; }
+  @keyframes piscar { 0%,100% { opacity: 1; } 50% { opacity: .5; } }
   .banner-isencao .icon { font-size: 48px; flex-shrink: 0; }
   .banner-isencao .txt { font-size: 18px; line-height: 1.7; }
   .banner-isencao .txt strong { color: var(--azul); font-size: 20px; }
@@ -343,7 +320,7 @@ var CONFIG = {
   EVENTO: '104ª Quermesse Solidária CBC',
   MAX_INGRESSOS: 20,
   VALOR: 5.00,
-  API_URL: 'https://script.google.com/macros/s/AKfycbxoA2rnRNqT9Xb3RlxcWyP2GV2-GhqncxFk_wVbOJhVdiq-hjoV3JbX3fEWUEHkPNazDA/exec', // Altere para sua URL
+  API_URL: 'https://script.google.com/macros/s/AKfycbzvi7PzWvR5y7QERxf267n_sROqXgCSQFcIhfSz8UfPlzrqnMzFS64kn7V5aG3Qt_FoRw/exec', // Altere para sua URL
   PIX_CHAVE: '51985998118', // CPF, Email ou Chave aleatória
   PIX_NOME: 'Colégio Bom Conselho',
   PIX_CIDADE: 'Porto Alegre'
@@ -458,39 +435,27 @@ function mostrarToast(msg) {
   setTimeout(function() { t.classList.remove('show'); }, 2500);
 }
 
-// Gerador PIX Copia e Cola (padrão BR Code)
+// Gerador PIX Copia e Cola (padrão BR Code - versão compacta)
 function gerarPixPayload(chave, nome, cidade, valor) {
-  function campo(id, val) {
-    var len = val.length.toString().padStart(2, '0');
-    return id + len + val;
+  function c(id, val) {
+    var l = val.length.toString().padStart(2, '0');
+    return id + l + val;
   }
-  // Nome curto para reduzir tamanho do payload
-  var nomeShort = nome.substring(0, 15).trim();
-  var cidadeShort = cidade.substring(0, 10).trim();
-  var merchantAccInfo = campo('00', 'BR.GOV.BCB.PIX') + campo('01', chave);
-  var payload =
-    campo('00', '01') +
-    campo('26', merchantAccInfo) +
-    campo('52', '0000') +
-    campo('53', '986') +
-    campo('54', valor.toFixed(2)) +
-    campo('58', 'BR') +
-    campo('59', nomeShort) +
-    campo('60', cidadeShort) +
-    '6304';
-  var crc = crc16(payload);
-  return payload + crc;
+  var n = nome.substring(0, 10).trim();
+  var d = cidade.substring(0, 8).trim();
+  var m = c('00', 'BR.GOV.BCB.PIX') + c('01', chave);
+  var p = c('00', '01') + c('26', m) + c('52', '0000') + c('53', '986') + c('54', valor.toFixed(2)) + c('58', 'BR') + c('59', n) + c('60', d) + '6304';
+  return p + crc16(p);
 }
 
-function crc16(str) {
-  var crc = 0xFFFF;
-  for (var i = 0; i < str.length; i++) {
-    crc ^= str.charCodeAt(i) << 8;
-    for (var j = 0; j < 8; j++) {
-      crc = (crc & 0x8000) ? (crc << 1) ^ 0x1021 : crc << 1;
-    }
+function crc16(s) {
+  var c = 0xFFFF, i, j;
+  for (i = 0; i < s.length; i++) {
+    c ^= s.charCodeAt(i) << 8;
+    for (j = 0; j < 8; j++)
+      c = (c & 0x8000) ? (c << 1) ^ 0x1021 : c << 1;
   }
-  return ((crc & 0xFFFF).toString(16).toUpperCase().padStart(4,'0'));
+  return ((c & 0xFFFF).toString(16).toUpperCase().padStart(4, '0'));
 }
 </script>
 </body>

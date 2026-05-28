@@ -262,7 +262,7 @@
 
 <script>
 var CONFIG = {
-  API_URL: 'https://script.google.com/macros/s/AKfycbxBpY479Gm_DYIl80kHkjTKT4NR6Rrv6quSce5WKGWLhgNHeEovvtGFdQ8UWIKqR2_5nw/exec',
+  API_URL: 'https://script.google.com/macros/s/AKfycby1FSHe_eA56ISkc0uUxUZTUPH9XVUNFVHZCzobkay-IaT_8X8b6nkWCnFdpPKsdshR6w/exec',
   SENHA: 'Org@2026'
 };
 </script>
@@ -645,7 +645,7 @@ function montarUrlWpp(data, id) {
   var nome    = data.nome    || 'Cliente';
   var email   = data.email   || '';
   var contato = data.contato || '';
-  var num = contato.replace(/\D/g, '');
+  var num = String(contato || '').replace(/\D/g, '');
   if (!num) return null;
   if (num.length <= 11) num = '55' + num;
   var msg;

@@ -386,26 +386,14 @@ function abrirModal() {
   // QR Code PIX (formato simples com chave e valor)
   var pixPayload = gerarPixPayload(CONFIG.PIX_CHAVE, CONFIG.PIX_NOME, CONFIG.PIX_CIDADE, pedidoAtual.total);
   document.getElementById('pix-qrcode').innerHTML = '';
-  const canvas = document.createElement('canvas');
-
-QRCode.toCanvas(
-    canvas,
-    pixPayload,
-    {
-        width: 200,
-        margin: 1,
-        errorCorrectionLevel: 'L'
-    },
-    function (err) {
-
-        if (err) {
-            console.error(err);
-            return;
-        }
-
-        div.appendChild(canvas);
-    }
-);
+  new QRCode(document.getElementById('pix-qrcode'), {
+    text: pixPayload,
+    width: 200,
+    height: 200,
+    colorDark: "#000000",
+    colorLight: "#ffffff",
+    correctLevel: QRCode.CorrectLevel.L
+});
 
   // Info do pedido
   var ids = pedidoAtual.ids.join(', ');

@@ -262,7 +262,7 @@
 
 <script>
 var CONFIG = {
-  API_URL: 'https://script.google.com/macros/s/AKfycbxYIb8Oq28qvGQzWRQ1TZSt69NsRF2aHtG0Kh9IIvE_ZjFbCsBDur8re_2PAThHDyfh/exec',
+  API_URL: 'https://script.google.com/macros/s/AKfycbxBpY479Gm_DYIl80kHkjTKT4NR6Rrv6quSce5WKGWLhgNHeEovvtGFdQ8UWIKqR2_5nw/exec',
   SENHA: 'Org@2026'
 };
 </script>
@@ -619,30 +619,25 @@ function atualizarContadorLote() {
   });
 }
 
-// Chamado diretamente pelo onclick do <a> — retorna false para não navegar
-// O href já foi setado com a URL correta antes do clique
-function prepararLinkWpp(el) {
-  if (_filaIdx >= _filaWpp.length) { fecharAprovacaoModal(); return false; }
+function dispararWpp() {
+  if (_filaIdx >= _filaWpp.length) { fecharAprovacaoModal(); return; }
   var item = _filaWpp[_filaIdx];
   var url  = montarUrlWpp(item.data, item.id);
-  if (!url) { toast('Sem número de WhatsApp para este cliente', 'vermelho'); return false; }
-  el.href = url; // define o href no momento exato do clique — navegador aceita
+  if (!url) { toast('Sem número de WhatsApp para este cliente', 'vermelho'); return; }
   _filaIdx++;
   if (_filaIdx >= _filaWpp.length) {
-    setTimeout(function() {
-      document.getElementById('ap-btn-texto').textContent = 'Concluído ✓';
-      document.getElementById('ap-btn-wpp').style.pointerEvents = 'none';
-      document.getElementById('ap-btn-wpp').style.background = '#1da851';
-      if (_filaWpp.length === 1) { setTimeout(fecharAprovacaoModal, 1800); }
-      else {
-        atualizarContadorLote();
-        document.getElementById('ap-lote-contador').textContent = 'Todos notificados! ✅';
-      }
-    }, 100);
+    document.getElementById('ap-btn-texto').textContent = 'Concluído ✓';
+    document.getElementById('ap-btn-wpp').disabled = true;
+    document.getElementById('ap-btn-wpp').style.background = '#1da851';
+    if (_filaWpp.length === 1) { setTimeout(fecharAprovacaoModal, 1800); }
+    else {
+      atualizarContadorLote();
+      document.getElementById('ap-lote-contador').textContent = 'Todos notificados! ✅';
+    }
   } else {
-    setTimeout(function() { if (_filaWpp.length > 1) atualizarContadorLote(); }, 100);
+    if (_filaWpp.length > 1) atualizarContadorLote();
   }
-  return true; // deixa o <a target="_blank"> navegar normalmente
+  window.location.href = url;
 }
 
 // Monta a URL do WhatsApp sem abrir nada — só string
@@ -702,9 +697,9 @@ function fecharAprovacaoModal() {
     <div class="aprovacao-email-box" id="ap-email-box"></div>
     <div class="lote-fila" id="ap-lote-fila" style="display:none"></div>
     <div class="lote-contador" id="ap-lote-contador" style="display:none"></div>
-    <a class="btn-wpp-aprovar" id="ap-btn-wpp" href="#" target="_blank" onclick="return prepararLinkWpp(this)">
+    <button class="btn-wpp-aprovar" id="ap-btn-wpp" onclick="dispararWpp()">
       <span>📱</span> <span id="ap-btn-texto">Enviar orientação no WhatsApp</span>
-    </a>
+    </button>
     <button class="btn-pular" onclick="fecharAprovacaoModal()">Pular / Fechar</button>
   </div>
 </div>

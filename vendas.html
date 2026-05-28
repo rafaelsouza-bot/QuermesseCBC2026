@@ -386,18 +386,17 @@ function abrirModal() {
   // QR Code PIX (formato simples com chave e valor)
   var pixPayload = gerarPixPayload(CONFIG.PIX_CHAVE, CONFIG.PIX_NOME, CONFIG.PIX_CIDADE, pedidoAtual.total);
   document.getElementById('pix-qrcode').innerHTML = '';
-  const div = document.getElementById('pix-qrcode');
-
-div.innerHTML = '';
+  const canvas = document.createElement('canvas');
 
 QRCode.toCanvas(
+    canvas,
     pixPayload,
     {
         width: 200,
         margin: 1,
         errorCorrectionLevel: 'L'
     },
-    function (err, canvas) {
+    function (err) {
 
         if (err) {
             console.error(err);

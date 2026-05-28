@@ -196,13 +196,72 @@
     z-index: 50; font-size: 32px;
   }
   .loading-overlay.show { display: flex; }
+
+  /* Painel confirmação aprovação */
+  .aprovacao-overlay {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,.75);
+    z-index: 300; display: none;
+    align-items: center; justify-content: center;
+    padding: 16px;
+  }
+  .aprovacao-overlay.aberto { display: flex; }
+  .aprovacao-modal {
+    background: var(--card);
+    border: 1.5px solid var(--verde);
+    border-radius: 18px;
+    padding: 28px 22px;
+    max-width: 380px; width: 100%;
+    text-align: center;
+    animation: slideUp .3s ease;
+  }
+  @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+  .aprovacao-icon { font-size: 48px; margin-bottom: 10px; }
+  .aprovacao-titulo { font-size: 20px; font-weight: 900; color: var(--verde); margin-bottom: 6px; }
+  .aprovacao-sub { font-size: 13px; color: var(--texto2); margin-bottom: 20px; line-height: 1.5; }
+  .aprovacao-email-box {
+    background: var(--card2); border: 1px solid var(--borda);
+    border-radius: 10px; padding: 12px 16px;
+    font-size: 13px; color: var(--texto2);
+    margin-bottom: 20px; line-height: 1.6;
+  }
+  .aprovacao-email-box strong { color: var(--verde); }
+  .btn-wpp-aprovar {
+    width: 100%;
+    background: #25d366; color: #fff;
+    border: none; border-radius: 12px;
+    padding: 16px; font-size: 16px; font-weight: 800;
+    cursor: pointer; margin-bottom: 10px;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+  }
+  .btn-wpp-aprovar:hover { background: #1da851; }
+  .btn-pular {
+    width: 100%;
+    background: transparent; border: 1.5px solid var(--borda);
+    color: var(--texto2); border-radius: 12px;
+    padding: 13px; font-size: 14px; font-weight: 600;
+    cursor: pointer;
+  }
+  .btn-pular:hover { border-color: var(--texto2); }
+  /* Fila lote */
+  .lote-fila { text-align: left; margin-bottom: 16px; }
+  .lote-fila-item {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 8px 12px; border-radius: 8px;
+    background: var(--card2); margin-bottom: 6px;
+    font-size: 13px;
+  }
+  .lote-fila-item .nome { font-weight: 700; }
+  .lote-fila-item .id-tag { font-family: monospace; font-size: 11px; color: var(--texto2); }
+  .lote-contador { font-size: 12px; color: var(--texto2); margin-bottom: 12px; }
+
 </style>
 </head>
 <body>
 
 <script>
 var CONFIG = {
-  API_URL: 'https://script.google.com/macros/s/AKfycbwRRoisTXIHkXfMnU8tijeGQC4wD_7dw1qtaemOYrFS_ArsLn-SyVS7XSw09eULABGyrA/exec',
+  API_URL: 'https://script.google.com/macros/s/AKfycbzFBD1-tFO1fZToTCcVBDZ6jiuZvel0JzlwMVl8_QJBHIuYdSzzrmNsOvlY6w4J_RDgQg/exec',
   SENHA: 'Org@2026'
 };
 </script>
@@ -397,16 +456,7 @@ async function aprovar(id) {
     var data = await res.json();
     if (data.ok) {
       atualizarLocal(id, 'ATIVO');
-      // Feedback sobre o e-mail
-      if (data.emailEnviado) {
-        toast('✅ Aprovado! E-mail com QR Code enviado para ' + data.email, 'verde');
-      } else if (data.email === '') {
-        toast('✅ Aprovado! (cliente sem e-mail cadastrado)', 'verde');
-      } else {
-        toast('✅ Aprovado! ' + (data.avisoEmail || ''), 'verde');
-      }
-      // Dispara WhatsApp automaticamente com orientações
-      setTimeout(function() { enviarWhatsAppAprovacao(data, id); }, 800);
+      mostrarConfirmacaoAprovacao(data, id);
     } else { toast('Erro: ' + data.erro, 'vermelho'); }
   } catch(e) { toast('Erro de conexão', 'vermelho'); }
   mostrarLoading(false);
@@ -502,10 +552,10 @@ async function aprovarLote(ids) {
   if (erros === 0) toast('✅ ' + ids.length + ' ingressos aprovados! E-mails enviados.', 'verde');
   else toast('⚠️ ' + erros + ' erros ao aprovar', 'vermelho');
   renderLista();
-  // Dispara WhatsApp para cada aprovado (com delay para não bloquear)
-  aprovados.forEach(function(item, idx) {
-    setTimeout(function() { enviarWhatsAppAprovacao(item.data, item.id); }, (idx + 1) * 1200);
-  });
+  // Mostra painel para enviar WhatsApp para cada aprovado
+  if (aprovados.length > 0) {
+    mostrarPainelWhatsAppLote(aprovados);
+  }
 }
 
 function atualizarLocalSilencioso(id, novoStatus) {
@@ -536,6 +586,120 @@ function toast(msg, cor) {
   el.className   = 'toast ' + (cor || '') + ' show';
   setTimeout(function() { el.className = 'toast ' + (cor || ''); }, 3000);
 }
+
+// ── Confirmação de aprovação + WhatsApp ──────────────────────
+var _filaWpp = [];
+var _filaIdx = 0;
+
+function mostrarConfirmacaoAprovacao(data, id) {
+  _filaWpp = [{ data: data, id: id }];
+  _filaIdx = 0;
+
+  var nome  = data.nome  || 'Cliente';
+  var email = data.email || '';
+
+  document.getElementById('ap-titulo').textContent = 'Ingresso Aprovado!';
+  document.getElementById('ap-lote-fila').style.display    = 'none';
+  document.getElementById('ap-lote-contador').style.display = 'none';
+  document.getElementById('ap-btn-texto').textContent = 'Enviar orientação no WhatsApp';
+
+  if (email) {
+    document.getElementById('ap-sub').textContent = 'E-mail com QR Code enviado para ' + nome + '.';
+    document.getElementById('ap-email-box').innerHTML =
+      '📧 QR Code enviado para:<br><strong>' + email + '</strong><br><br>' +
+      'Clique abaixo para avisar o cliente pelo WhatsApp que o ingresso está aprovado e orientá-lo a verificar o e-mail.';
+  } else {
+    document.getElementById('ap-sub').textContent = 'Cliente sem e-mail cadastrado.';
+    document.getElementById('ap-email-box').innerHTML =
+      '⚠️ Este cliente <strong>não informou e-mail</strong>.<br><br>' +
+      'Clique abaixo para enviar as orientações de entrada diretamente pelo WhatsApp.';
+  }
+
+  document.getElementById('aprovacao-overlay').classList.add('aberto');
+}
+
+function mostrarPainelWhatsAppLote(aprovados) {
+  _filaWpp = aprovados;
+  _filaIdx = 0;
+
+  document.getElementById('ap-titulo').textContent = aprovados.length + ' ingressos aprovados!';
+  document.getElementById('ap-sub').textContent = 'Envie a orientação pelo WhatsApp para cada cliente.';
+  document.getElementById('ap-email-box').innerHTML =
+    '✅ E-mails com QR Code enviados automaticamente para os clientes com e-mail cadastrado.';
+
+  // Monta fila visual
+  var filaEl = document.getElementById('ap-lote-fila');
+  filaEl.style.display = 'block';
+  filaEl.innerHTML = aprovados.map(function(item, idx) {
+    return '<div class="lote-fila-item" id="fila-item-' + idx + '">' +
+      '<span class="nome">' + (item.data.nome || 'Cliente') + '</span>' +
+      '<span class="id-tag">' + item.id + '</span>' +
+    '</div>';
+  }).join('');
+
+  atualizarContadorLote();
+  document.getElementById('ap-lote-contador').style.display = 'block';
+  document.getElementById('aprovacao-overlay').classList.add('aberto');
+}
+
+function atualizarContadorLote() {
+  var restantes = _filaWpp.length - _filaIdx;
+  document.getElementById('ap-lote-contador').textContent =
+    restantes + ' cliente(s) restante(s) para notificar';
+  document.getElementById('ap-btn-texto').textContent =
+    _filaIdx === 0
+      ? 'Enviar WhatsApp (1º de ' + _filaWpp.length + ')'
+      : 'Próximo WhatsApp (' + (_filaIdx + 1) + ' de ' + _filaWpp.length + ')';
+  // Destaca o atual na fila
+  _filaWpp.forEach(function(_, i) {
+    var el = document.getElementById('fila-item-' + i);
+    if (!el) return;
+    if (i < _filaIdx)      { el.style.opacity = '.4'; el.style.textDecoration = 'line-through'; }
+    else if (i === _filaIdx){ el.style.background = 'var(--verde-bg)'; el.style.border = '1px solid var(--verde)'; }
+  });
+}
+
+function dispararProximoWpp() {
+  if (_filaIdx >= _filaWpp.length) { fecharAprovacaoModal(); return; }
+  var item = _filaWpp[_filaIdx];
+  enviarWhatsAppAprovacao(item.data, item.id);
+  _filaIdx++;
+  if (_filaIdx >= _filaWpp.length) {
+    document.getElementById('ap-btn-texto').textContent = 'Concluído ✓';
+    document.getElementById('ap-btn-wpp').style.background = '#1da851';
+    if (_filaWpp.length === 1) {
+      setTimeout(fecharAprovacaoModal, 1500);
+    } else {
+      atualizarContadorLote();
+      document.getElementById('ap-lote-contador').textContent = 'Todos notificados! ✅';
+    }
+  } else {
+    if (_filaWpp.length > 1) atualizarContadorLote();
+  }
+}
+
+function fecharAprovacaoModal() {
+  document.getElementById('aprovacao-overlay').classList.remove('aberto');
+  _filaWpp = []; _filaIdx = 0;
+}
+
 </script>
+
+<!-- Modal confirmação aprovação -->
+<div class="aprovacao-overlay" id="aprovacao-overlay">
+  <div class="aprovacao-modal" id="aprovacao-modal">
+    <div class="aprovacao-icon">✅</div>
+    <div class="aprovacao-titulo" id="ap-titulo">Ingresso Aprovado!</div>
+    <div class="aprovacao-sub" id="ap-sub"></div>
+    <div class="aprovacao-email-box" id="ap-email-box"></div>
+    <div class="lote-fila" id="ap-lote-fila" style="display:none"></div>
+    <div class="lote-contador" id="ap-lote-contador" style="display:none"></div>
+    <button class="btn-wpp-aprovar" id="ap-btn-wpp" onclick="dispararProximoWpp()">
+      <span>📱</span> <span id="ap-btn-texto">Enviar orientação no WhatsApp</span>
+    </button>
+    <button class="btn-pular" onclick="fecharAprovacaoModal()">Pular / Fechar</button>
+  </div>
+</div>
+
 </body>
 </html>

@@ -13,8 +13,8 @@ var SENHA_ORGANIZADOR = 'Org@2026';
 
 // ── CONFIGURAÇÕES DE E-MAIL ──────────────────────────────────
 // Troque pelo e-mail real da conta que hospeda o script:
-var EMAIL_REMETENTE_NOME = 'Quermesse CBC';
-var EMAIL_REPLY_TO       = 'SEU_EMAIL@escola.com.br'; // <-- TROQUE AQUI
+var EMAIL_REMETENTE_NOME = 'rafael.souza@adm.bomconselho.com.br';
+var EMAIL_REPLY_TO       = 'rafael.souza@adm.bomconselho.com.br'; // <-- TROQUE AQUI
 
 // ── Ponto de entrada HTTP ────────────────────────────────────
 function doPost(e) {

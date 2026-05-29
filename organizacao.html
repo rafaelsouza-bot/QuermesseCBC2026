@@ -398,7 +398,7 @@ function filtrar(f) {
   renderLista();
 }
 
-// ── Render ───────────────────────────────────────────────────
+// ── Render agrupado por TXN ──────────────────────────────────
 function renderLista() {
   var busca = document.getElementById('busca').value.toLowerCase();
   var lista = todosIngressos.filter(function(i) {
@@ -406,8 +406,9 @@ function renderLista() {
     var matchBusca  = !busca ||
       i.nome.toLowerCase().includes(busca) ||
       i.id.toLowerCase().includes(busca) ||
-      i.tipo.toLowerCase().includes(busca) ||
-      i.contato.toLowerCase().includes(busca);
+      (i.tipo || '').toLowerCase().includes(busca) ||
+      (i.contato || '').toLowerCase().includes(busca) ||
+      (i.txn || '').toLowerCase().includes(busca);
     return matchFiltro && matchBusca;
   });
 
@@ -418,35 +419,119 @@ function renderLista() {
     return;
   }
 
-  el.innerHTML = lista.map(function(i) {
-    var acoes = '';
-    if (i.status === 'PENDENTE') {
-      acoes = '<div class="card-acoes">' +
-        '<button class="btn-aprovar"  onclick="aprovar(\'' + i.id + '\')">✅ Aprovar</button>' +
-        '<button class="btn-rejeitar" onclick="rejeitar(\'' + i.id + '\')">❌ Rejeitar</button>' +
-        '</div>';
-    } else if (i.status === 'ATIVO') {
-      acoes = '<div class="card-acoes">' +
-        '<button class="btn-cancelar-card" onclick="cancelar(\'' + i.id + '\')">🚫 Cancelar ingresso</button>' +
-        '</div>';
+  // Agrupa por TXN
+  var grupos = {};
+  var ordemGrupos = [];
+  lista.forEach(function(i) {
+    var chave = i.txn || ('SEM-TXN-' + i.id);
+    if (!grupos[chave]) {
+      grupos[chave] = [];
+      ordemGrupos.push(chave);
     }
+    grupos[chave].push(i);
+  });
 
-    return '<div class="ingresso-card ' + i.status.toLowerCase() + '">' +
-      '<div class="card-top">' +
-        '<div><div class="card-nome">' + i.nome + '</div><div class="card-id">' + i.id + '</div></div>' +
-        '<span class="badge ' + i.status.toLowerCase() + '">' + i.status + '</span>' +
+  var html = '';
+
+  ordemGrupos.forEach(function(txn) {
+    var grupo = grupos[txn];
+    var primeiro = grupo[0];
+    var nome     = primeiro.nome;
+    var contato  = primeiro.contato || '';
+    var email    = primeiro.email   || '';
+    var dataCompra = primeiro.dataCompra || '';
+    var totalValor = grupo.reduce(function(s, i) { return s + (parseFloat(i.valor) || 0); }, 0);
+    var algumPendente = grupo.some(function(i) { return i.status === 'PENDENTE'; });
+    var todosAtivos   = grupo.every(function(i) { return i.status === 'ATIVO' || i.status === 'USADO'; });
+
+    // Status dominante do grupo
+    var statusGrupo = algumPendente ? 'pendente' : (todosAtivos ? 'ativo' : 'cancelado');
+
+    // IDs para aprovar lote
+    var idsPendentes = grupo.filter(function(i) { return i.status === 'PENDENTE'; }).map(function(i) { return i.id; });
+    var idsJson = JSON.stringify(idsPendentes);
+    var txnReal = txn.startsWith('SEM-TXN-') ? '' : txn;
+
+    html += '<div class="ingresso-card ' + statusGrupo + '" style="margin-bottom:14px">';
+
+    // Cabeçalho do grupo
+    html += '<div class="card-top">' +
+      '<div>' +
+        '<div class="card-nome">' + nome + '</div>' +
+        '<div class="card-id">' + (txnReal || grupo[0].id) + ' &nbsp;·&nbsp; ' + grupo.length + ' ingresso(s)</div>' +
       '</div>' +
-      '<div class="card-info">' +
-        '<div class="card-info-item"><span class="k">Tipo</span><span class="v">' + i.tipo + '</span></div>' +
-        '<div class="card-info-item"><span class="k">Pagamento</span><span class="v">' + i.pagamento + '</span></div>' +
-        '<div class="card-info-item"><span class="k">Valor</span><span class="v">R$ ' + (parseFloat(i.valor)||0).toFixed(2).replace('.',',') + '</span></div>' +
-        '<div class="card-info-item"><span class="k">Compra</span><span class="v">' + i.dataCompra + '</span></div>' +
-        '<div class="card-info-item" style="grid-column:span 2"><span class="k">Contato</span><span class="v">' + i.contato + '</span></div>' +
-        (i.obs ? '<div class="card-info-item" style="grid-column:span 2"><span class="k">Obs</span><span class="v">' + i.obs + '</span></div>' : '') +
-      '</div>' +
-      acoes +
+      '<span class="badge ' + statusGrupo + '">' + (algumPendente ? 'PENDENTE' : (todosAtivos ? 'ATIVO' : 'MISTO')) + '</span>' +
     '</div>';
-  }).join('');
+
+    // Info resumida
+    html += '<div class="card-info">' +
+      '<div class="card-info-item"><span class="k">Total</span><span class="v">R$ ' + totalValor.toFixed(2).replace('.',',') + '</span></div>' +
+      '<div class="card-info-item"><span class="k">Compra</span><span class="v">' + dataCompra + '</span></div>' +
+      '<div class="card-info-item" style="grid-column:span 2"><span class="k">Contato</span><span class="v">' + (contato || '—') + '</span></div>' +
+      (email ? '<div class="card-info-item" style="grid-column:span 2"><span class="k">E-mail</span><span class="v">' + email + '</span></div>' : '') +
+    '</div>';
+
+    // Ingressos individuais do grupo
+    html += '<div style="border-top:1px solid var(--borda);margin:0 -16px;padding:10px 16px 4px">';
+    grupo.forEach(function(i) {
+      html += '<div style="display:flex;align-items:center;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--borda);font-size:13px">' +
+        '<span style="font-family:monospace;color:var(--texto2)">' + i.id + (i.seq ? ' <span style="font-size:11px">(' + i.seq + ')</span>' : '') + '</span>' +
+        '<span class="badge ' + i.status.toLowerCase() + '" style="font-size:10px">' + i.status + '</span>' +
+      '</div>';
+    });
+    html += '</div>';
+
+    // Ações do grupo
+    html += '<div class="card-acoes" style="margin-top:12px">';
+    if (algumPendente) {
+      if (txnReal) {
+        html += '<button class="btn-aprovar" onclick="aprovarPorTxn(\'' + txnReal + '\')">✅ Aprovar todos (' + idsPendentes.length + ')</button>';
+      } else {
+        html += '<button class="btn-aprovar" onclick="aprovarLote(' + idsJson + ')">✅ Aprovar</button>';
+      }
+      html += '<button class="btn-rejeitar" onclick="rejeitar(\'' + idsPendentes[0] + '\')">❌ Rejeitar</button>';
+    } else if (todosAtivos) {
+      html += '<button class="btn-cancelar-card" onclick="cancelar(\'' + grupo[0].id + '\')">🚫 Cancelar</button>';
+    }
+    html += '</div>';
+
+    html += '</div>';
+  });
+
+  el.innerHTML = html;
+}
+
+// ── Aprovar grupo inteiro via TXN ────────────────────────────
+async function aprovarPorTxn(txn) {
+  if (!confirm('Aprovar todos os ingressos da transação ' + txn + '?')) return;
+  mostrarLoading(true);
+  try {
+    var res  = await fetch(CONFIG.API_URL, { method: 'POST', body: JSON.stringify({ acao: 'aprovarGrupo', txn: txn, senha: senhaOrg }) });
+    var data = await res.json();
+    if (data.ok) {
+      toast('✅ ' + data.aprovados + ' ingresso(s) aprovado(s)!' + (data.emailsEnviados ? ' ' + data.emailsEnviados + ' e-mail(s) enviado(s).' : ''), 'verde');
+      // Atualiza localmente
+      data.grupo.forEach(function(g) {
+        todosIngressos = todosIngressos.map(function(i) {
+          if (i.id === g.id) i.status = 'ATIVO';
+          return i;
+        });
+      });
+      atualizarContadores();
+      renderLista();
+      // Abre painel WhatsApp
+      if (data.grupo && data.grupo.length > 0) {
+        var aprovados = data.grupo.map(function(g) {
+          var cached = todosIngressos.find(function(i) { return i.id === g.id; }) || {};
+          return { data: { nome: g.nome || cached.nome, email: g.email || cached.email, contato: g.contato || cached.contato }, id: g.id };
+        });
+        setTimeout(function() { mostrarPainelWhatsAppLote(aprovados); }, 500);
+      }
+    } else {
+      toast('Erro: ' + data.erro, 'vermelho');
+    }
+  } catch(e) { toast('Erro de conexão', 'vermelho'); }
+  mostrarLoading(false);
 }
 
 // ── Ações ────────────────────────────────────────────────────

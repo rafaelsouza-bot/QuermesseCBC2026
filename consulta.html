@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Consulta de Ingressos — Quermesse 2026</title>
+<style>
+  :root {
+    --bg: #0a0a0f; --card: #141420; --card2: #1c1c2e; --borda: #2a2a40;
+    --texto: #f0efff; --texto2: #8886aa;
+    --verde: #00c97a; --verde-bg: #001a0f;
+    --vermelho: #ff4444; --vermelho-bg: #1a0000;
+    --amarelo: #f59e0b; --amarelo-bg: #1a1200;
+    --azul: #3b82f6; --roxo: #8b5cf6;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  body { background: var(--bg); color: var(--texto); font-family: 'Segoe UI', sans-serif; min-height: 100vh; }
+
+  /* Login */
+  #tela-login { min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 24px; }
+  .login-icon { font-size: 52px; margin-bottom: 12px; }
+  .login-title { font-size: 24px; font-weight: 900; margin-bottom: 4px; }
+  .login-sub { font-size: 13px; color: var(--texto2); margin-bottom: 28px; }
+  .login-input { width: 100%; max-width: 320px; background: var(--card2); border: 1.5px solid var(--borda); border-radius: 12px; padding: 14px 16px; color: var(--texto); font-size: 16px; margin-bottom: 12px; outline: none; }
+  .login-input:focus { border-color: var(--roxo); }
+  .btn-login { width: 100%; max-width: 320px; background: var(--roxo); color: #fff; border: none; border-radius: 12px; padding: 15px; font-size: 16px; font-weight: 800; cursor: pointer; }
+
+  /* App */
+  #app { display: none; max-width: 600px; margin: 0 auto; padding: 16px; }
+  .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+  .header h1 { font-size: 20px; font-weight: 900; }
+  .btn-sair { background: var(--card2); border: 1px solid var(--borda); color: var(--texto2); border-radius: 8px; padding: 8px 14px; font-size: 13px; cursor: pointer; }
+
+  /* Busca */
+  .busca-box { background: var(--card); border: 1.5px solid var(--borda); border-radius: 14px; padding: 18px; margin-bottom: 20px; }
+  .busca-titulo { font-size: 13px; font-weight: 700; color: var(--texto2); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px; }
+  .busca-row { display: flex; gap: 8px; }
+  .busca-input { flex: 1; background: var(--card2); border: 1.5px solid var(--borda); border-radius: 10px; padding: 12px 14px; color: var(--texto); font-size: 14px; outline: none; font-family: monospace; }
+  .busca-input:focus { border-color: var(--roxo); }
+  .btn-buscar { background: var(--roxo); color: #fff; border: none; border-radius: 10px; padding: 12px 18px; font-size: 14px; font-weight: 700; cursor: pointer; white-space: nowrap; }
+  .busca-dica { font-size: 12px; color: var(--texto2); margin-top: 8px; }
+
+  /* Resultado grupo */
+  .grupo-box { background: var(--card); border: 1.5px solid var(--borda); border-radius: 14px; overflow: hidden; }
+  .grupo-header { background: var(--card2); padding: 14px 18px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; }
+  .grupo-txn { font-family: monospace; font-size: 14px; font-weight: 900; color: var(--roxo); }
+  .grupo-meta { font-size: 12px; color: var(--texto2); }
+  .grupo-acoes { display: flex; gap: 8px; flex-wrap: wrap; padding: 14px 18px; border-bottom: 1px solid var(--borda); }
+  .btn-aprovar-grupo { background: var(--verde); color: #000; border: none; border-radius: 10px; padding: 10px 16px; font-size: 13px; font-weight: 800; cursor: pointer; flex: 1; }
+  .btn-aprovar-grupo:disabled { opacity: .4; cursor: not-allowed; }
+  .btn-wpp-grupo { background: #25d366; color: #fff; border: none; border-radius: 10px; padding: 10px 16px; font-size: 13px; font-weight: 800; cursor: pointer; flex: 1; }
+
+  /* Cards ingressos */
+  .ingresso-card { padding: 14px 18px; border-bottom: 1px solid var(--borda); }
+  .ingresso-card:last-child { border-bottom: none; }
+  .ing-top { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 8px; gap: 8px; }
+  .ing-id { font-family: monospace; font-size: 13px; font-weight: 900; color: var(--texto); }
+  .ing-seq { font-size: 11px; color: var(--texto2); background: var(--card2); padding: 2px 8px; border-radius: 99px; }
+  .badge-status { font-size: 11px; font-weight: 800; padding: 3px 10px; border-radius: 99px; text-transform: uppercase; letter-spacing: 1px; }
+  .badge-PENDENTE  { background: var(--amarelo-bg); color: var(--amarelo); }
+  .badge-ATIVO     { background: var(--verde-bg); color: var(--verde); }
+  .badge-USADO     { background: var(--card2); color: var(--texto2); }
+  .badge-CANCELADO { background: var(--vermelho-bg); color: var(--vermelho); }
+  .ing-info { font-size: 12px; color: var(--texto2); line-height: 1.8; margin-bottom: 10px; }
+  .ing-info span { color: var(--texto); font-weight: 600; }
+  .ing-acoes { display: flex; gap: 8px; flex-wrap: wrap; }
+  .btn-reenviar { background: var(--azul); color: #fff; border: none; border-radius: 8px; padding: 8px 14px; font-size: 12px; font-weight: 700; cursor: pointer; }
+  .btn-reenviar:disabled { opacity: .4; cursor: not-allowed; }
+  .btn-aprovar-ing { background: var(--verde-bg); color: var(--verde); border: 1px solid var(--verde); border-radius: 8px; padding: 8px 14px; font-size: 12px; font-weight: 700; cursor: pointer; }
+
+  /* Loading / Toast */
+  .loading-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.6); z-index: 999; align-items: center; justify-content: center; flex-direction: column; gap: 12px; }
+  .loading-overlay.show { display: flex; }
+  .spinner { width: 40px; height: 40px; border: 3px solid var(--borda); border-top-color: var(--roxo); border-radius: 50%; animation: spin .7s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: var(--card2); border: 1px solid var(--borda); color: var(--texto); padding: 12px 20px; border-radius: 12px; font-size: 14px; font-weight: 600; opacity: 0; transition: opacity .3s; z-index: 1000; white-space: nowrap; pointer-events: none; }
+  .toast.show { opacity: 1; }
+  .toast.verde { border-color: var(--verde); color: var(--verde); }
+  .toast.vermelho { border-color: var(--vermelho); color: var(--vermelho); }
+
+  .vazio { text-align: center; padding: 40px 20px; color: var(--texto2); font-size: 14px; }
+</style>
+</head>
+<body>
+
+<script>
+// CONFIG injetado pelo Apps Script — senha nunca fica exposta no HTML
+var CONFIG = {
+  API_URL: '<?= apiUrl ?>',
+  SENHA:   '<?= senhaOrg ?>'
+};
+</script>
+
+<!-- LOGIN -->
+<div id="tela-login">
+  <div class="login-icon">🔍</div>
+  <div class="login-title">Consulta de Ingressos</div>
+  <div class="login-sub">Busque por ID ou número de compra (TXN)</div>
+  <input class="login-input" type="password" id="senha-input" placeholder="Senha da organização" maxlength="12"
+    onkeydown="if(event.key==='Enter') entrar()">
+  <button class="btn-login" onclick="entrar()">Entrar</button>
+</div>
+
+<!-- APP -->
+<div id="app">
+  <div class="header">
+    <h1>🔍 Consulta de Ingressos</h1>
+    <button class="btn-sair" onclick="sair()">Sair</button>
+  </div>
+
+  <div class="busca-box">
+    <div class="busca-titulo">Buscar ingresso ou transação</div>
+    <div class="busca-row">
+      <input class="busca-input" type="text" id="busca-input" placeholder="QRM-XXXXXXXX ou TXN-XXXXXXXX"
+        onkeydown="if(event.key==='Enter') buscar()" autocomplete="off" autocorrect="off" spellcheck="false">
+      <button class="btn-buscar" onclick="buscar()">🔍 Buscar</button>
+    </div>
+    <div class="busca-dica">Digite o ID do ingresso (QRM-) ou o número da compra (TXN-)</div>
+  </div>
+
+  <div id="resultado"></div>
+</div>
+
+<!-- Loading / Toast -->
+<div class="loading-overlay" id="loading"><div class="spinner"></div></div>
+<div class="toast" id="toast"></div>
+
+<script>
+var senhaOrg = '';
+var grupoAtual = [];
+var txnAtual = '';
+
+function entrar() {
+  var s = document.getElementById('senha-input').value.trim();
+  if (s !== CONFIG.SENHA) return alert('Senha incorreta.');
+  senhaOrg = s;
+  document.getElementById('tela-login').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
+  // Se veio com ?busca= na URL, já busca direto
+  var params = new URLSearchParams(window.location.search);
+  var q = params.get('busca');
+  if (q) { document.getElementById('busca-input').value = q; buscar(); }
+}
+
+function sair() {
+  senhaOrg = '';
+  document.getElementById('tela-login').style.display = 'flex';
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('resultado').innerHTML = '';
+}
+
+async function buscar() {
+  var q = document.getElementById('busca-input').value.trim().toUpperCase();
+  if (!q) return;
+  mostrarLoading(true);
+  try {
+    var payload = { acao: 'buscarGrupo', senha: senhaOrg };
+    if (q.startsWith('TXN-')) payload.txn = q;
+    else payload.id = q;
+
+    var res  = await fetch(CONFIG.API_URL, { method: 'POST', body: JSON.stringify(payload) });
+    var data = await res.json();
+    if (data.ok) {
+      grupoAtual = data.grupo;
+      txnAtual   = data.txn;
+      renderGrupo(data.grupo, data.txn);
+    } else {
+      document.getElementById('resultado').innerHTML = '<div class="vazio">❌ ' + data.erro + '</div>';
+    }
+  } catch(e) {
+    toast('Erro de conexão', 'vermelho');
+  }
+  mostrarLoading(false);
+}
+
+function renderGrupo(grupo, txn) {
+  var todosAtivos    = grupo.every(function(i) { return i.status === 'ATIVO' || i.status === 'USADO'; });
+  var algumPendente  = grupo.some(function(i)  { return i.status === 'PENDENTE'; });
+  var nome           = grupo[0].nome;
+  var contato        = grupo[0].contato;
+  var email          = grupo[0].email;
+
+  var html = '<div class="grupo-box">';
+
+  // Cabeçalho do grupo
+  html += '<div class="grupo-header">' +
+    '<div>' +
+      '<div class="grupo-txn">' + (txn || 'Sem TXN') + '</div>' +
+      '<div class="grupo-meta">' + nome + ' • ' + grupo.length + ' ingresso(s)</div>' +
+    '</div>' +
+    '<div class="grupo-meta">' + (email || 'Sem e-mail') + '</div>' +
+  '</div>';
+
+  // Ações do grupo
+  html += '<div class="grupo-acoes">';
+  if (algumPendente) {
+    html += '<button class="btn-aprovar-grupo" onclick="aprovarGrupoCompleto()">✅ Aprovar todos (' + grupo.length + ')</button>';
+  }
+  if (contato) {
+    html += '<button class="btn-wpp-grupo" onclick="abrirWhatsAppGrupo()">📱 WhatsApp</button>';
+  }
+  html += '</div>';
+
+  // Cards individuais
+  grupo.forEach(function(ing, idx) {
+    var temEmail = !!ing.email;
+    html += '<div class="ingresso-card">' +
+      '<div class="ing-top">' +
+        '<div>' +
+          '<div class="ing-id">' + ing.id + '</div>' +
+          (ing.seq ? '<div class="ing-seq">Ingresso ' + ing.seq + '</div>' : '') +
+        '</div>' +
+        '<span class="badge-status badge-' + ing.status + '">' + ing.status + '</span>' +
+      '</div>' +
+      '<div class="ing-info">' +
+        'Tipo: <span>' + ing.tipo + '</span> &nbsp;|&nbsp; ' +
+        'Valor: <span>R$ ' + parseFloat(ing.valor).toFixed(2).replace('.',',') + '</span><br>' +
+        'Compra: <span>' + ing.dataCompra + '</span>' +
+        (ing.dataUso ? '<br>Usado em: <span>' + ing.dataUso + '</span>' : '') +
+        (ing.email ? '<br>E-mail: <span>' + ing.email + '</span>' : '<br><span style="color:var(--amarelo)">⚠️ Sem e-mail cadastrado</span>') +
+      '</div>' +
+      '<div class="ing-acoes">';
+
+    if (ing.status === 'PENDENTE') {
+      html += '<button class="btn-aprovar-ing" onclick="aprovarUm(\'' + ing.id + '\', ' + idx + ')">✅ Aprovar</button>';
+    }
+    if (temEmail && ing.status === 'ATIVO') {
+      html += '<button class="btn-reenviar" id="btn-reenviar-' + idx + '" onclick="reenviarQR(\'' + ing.id + '\', ' + idx + ')">📧 Reenviar QR Code</button>';
+    }
+    html += '</div></div>';
+  });
+
+  html += '</div>';
+  document.getElementById('resultado').innerHTML = html;
+}
+
+async function aprovarGrupoCompleto() {
+  if (!txnAtual) return toast('TXN não identificado', 'vermelho');
+  if (!confirm('Aprovar todos os ingressos da transação ' + txnAtual + '?')) return;
+  mostrarLoading(true);
+  try {
+    var res  = await fetch(CONFIG.API_URL, { method: 'POST', body: JSON.stringify({ acao: 'aprovarGrupo', txn: txnAtual, senha: senhaOrg }) });
+    var data = await res.json();
+    if (data.ok) {
+      toast('✅ ' + data.aprovados + ' ingresso(s) aprovado(s)! ' + (data.emailsEnviados ? data.emailsEnviados + ' e-mail(s) enviado(s).' : ''), 'verde');
+      // Atualiza os dados locais
+      data.grupo.forEach(function(g) {
+        grupoAtual = grupoAtual.map(function(i) {
+          if (i.id === g.id) i.status = 'ATIVO';
+          return i;
+        });
+      });
+      renderGrupo(grupoAtual, txnAtual);
+      // Abre WhatsApp para avisar
+      setTimeout(function() { abrirWhatsAppGrupo(); }, 800);
+    } else {
+      toast('Erro: ' + data.erro, 'vermelho');
+    }
+  } catch(e) { toast('Erro de conexão', 'vermelho'); }
+  mostrarLoading(false);
+}
+
+async function aprovarUm(id, idx) {
+  mostrarLoading(true);
+  try {
+    var res  = await fetch(CONFIG.API_URL, { method: 'POST', body: JSON.stringify({ acao: 'aprovar', id: id, senha: senhaOrg }) });
+    var data = await res.json();
+    if (data.ok) {
+      toast('✅ Ingresso aprovado!' + (data.emailEnviado ? ' QR Code enviado por e-mail.' : ''), 'verde');
+      grupoAtual = grupoAtual.map(function(i) { if (i.id === id) i.status = 'ATIVO'; return i; });
+      renderGrupo(grupoAtual, txnAtual);
+    } else { toast('Erro: ' + data.erro, 'vermelho'); }
+  } catch(e) { toast('Erro de conexão', 'vermelho'); }
+  mostrarLoading(false);
+}
+
+async function reenviarQR(id, idx) {
+  var btn = document.getElementById('btn-reenviar-' + idx);
+  if (btn) { btn.disabled = true; btn.textContent = 'Enviando...'; }
+  try {
+    var res  = await fetch(CONFIG.API_URL, { method: 'POST', body: JSON.stringify({ acao: 'reenviarQR', id: id, senha: senhaOrg }) });
+    var data = await res.json();
+    if (data.ok) {
+      toast('📧 QR Code reenviado para ' + data.email, 'verde');
+      if (btn) btn.textContent = '✓ Enviado';
+    } else {
+      toast('Erro: ' + data.erro, 'vermelho');
+      if (btn) { btn.disabled = false; btn.textContent = '📧 Reenviar QR Code'; }
+    }
+  } catch(e) {
+    toast('Erro de conexão', 'vermelho');
+    if (btn) { btn.disabled = false; btn.textContent = '📧 Reenviar QR Code'; }
+  }
+}
+
+function abrirWhatsAppGrupo() {
+  var ing  = grupoAtual[0];
+  if (!ing || !ing.contato) return;
+  var num  = ('' + ing.contato).replace(/\D/g, '');
+  if (!num) return;
+  if (num.length <= 11) num = '55' + num;
+  var nome  = ing.nome  || 'Cliente';
+  var email = ing.email || '';
+  var msg;
+  if (email) {
+    msg =
+      '🎡 *104ª Quermesse Solidária CBC*\n\n' +
+      'Olá, *' + nome + '*! 😊\n\n' +
+      '✅ Seu pagamento foi *confirmado* e seu(s) ingresso(s) está(ão) aprovado(s)!\n\n' +
+      '📧 Enviamos o *QR Code de entrada* para o e-mail:\n' +
+      '*' + email + '*\n\n' +
+      '📋 *Como usar no dia do evento (04/07):*\n' +
+      '1️⃣ Abra o e-mail no seu celular ao chegar\n' +
+      '2️⃣ Mostre o QR Code ao porteiro\n' +
+      '3️⃣ Aguarde a leitura — entrada liberada!\n' +
+      '4️⃣ Cada QR Code é de *uso único*\n\n' +
+      '📍 *Local:* Ramiro Barcelos, 996 — Porto Alegre\n' +
+      '🕙 *Horário:* 11h às 16h\n\n' +
+      '⚠️ Não encontrou o e-mail? Verifique o *spam/lixo eletrônico*.\n\n' +
+      'Até lá! 🎉';
+  } else {
+    var ids = grupoAtual.map(function(i) { return i.id; }).join(', ');
+    msg =
+      '🎡 *104ª Quermesse Solidária CBC*\n\n' +
+      'Olá, *' + nome + '*! 😊\n\n' +
+      '✅ Seu pagamento foi *confirmado* e seu(s) ingresso(s) está(ão) aprovado(s)!\n\n' +
+      '🔑 *ID(s):* `' + ids + '`\n\n' +
+      '📋 *Como usar no dia do evento (04/07):*\n' +
+      '1️⃣ Informe o ID ao porteiro na entrada\n' +
+      '2️⃣ Aguarde a validação — entrada liberada!\n\n' +
+      '📍 *Local:* Ramiro Barcelos, 996 — Porto Alegre\n' +
+      '🕙 *Horário:* 11h às 16h\n\n' +
+      'Até lá! 🎉';
+  }
+  window.location.href = 'https://wa.me/' + num + '?text=' + encodeURIComponent(msg);
+}
+
+function mostrarLoading(show) {
+  document.getElementById('loading').className = 'loading-overlay' + (show ? ' show' : '');
+}
+
+function toast(msg, cor) {
+  var el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = 'toast ' + (cor || '') + ' show';
+  setTimeout(function() { el.className = 'toast ' + (cor || ''); }, 3500);
+}
+</script>
+</body>
+</html>

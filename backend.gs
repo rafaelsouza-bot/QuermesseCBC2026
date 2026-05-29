@@ -13,7 +13,7 @@ var SENHA_ORGANIZADOR = 'Org@2026';
 
 // ── CONFIGURAÇÕES DE E-MAIL ──────────────────────────────────
 // Troque pelo e-mail real da conta que hospeda o script:
-var EMAIL_REMETENTE_NOME = 'rafael.souza@adm.bomconselho.com.br';
+var EMAIL_REMETENTE_NOME = 'Quermesse CBC';
 var EMAIL_REPLY_TO       = 'rafael.souza@adm.bomconselho.com.br'; // <-- TROQUE AQUI
 
 // ── Ponto de entrada HTTP ────────────────────────────────────
@@ -25,17 +25,67 @@ function doPost(e) {
     if (acao === 'validar')   return resposta(validarIngresso(data));
     if (acao === 'dashboard') return resposta(getDashboard(data));
     if (acao === 'listar')    return resposta(listarIngressos(data));
-    if (acao === 'aprovar')   return resposta(aprovarIngresso(data));
-    if (acao === 'rejeitar')  return resposta(rejeitarIngresso(data));
-    if (acao === 'cancelar')  return resposta(cancelarIngresso(data));
+    if (acao === 'aprovar')      return resposta(aprovarIngresso(data));
+    if (acao === 'aprovarGrupo') return resposta(aprovarGrupo(data));
+    if (acao === 'rejeitar')     return resposta(rejeitarIngresso(data));
+    if (acao === 'cancelar')     return resposta(cancelarIngresso(data));
+    if (acao === 'reenviarQR')   return resposta(reenviarQR(data));
+    if (acao === 'buscarGrupo')  return resposta(buscarGrupo(data));
     return resposta({ ok: false, erro: 'Acao desconhecida' });
   } catch (err) {
     return resposta({ ok: false, erro: err.message });
   }
 }
 
+// ── Lista de e-mails autorizados a acessar o painel ─────────
+var EMAILS_AUTORIZADOS = [
+  'rafael.souza@adm.bomconselho.com.br',     // <- troque pelos e-mails reais
+  'nilse.garin@adm.bomconselho.com.br'        // <- pode adicionar quantos quiser
+];
+
 function doGet(e) {
-  return resposta({ ok: true, msg: 'API Quermesse no ar!' });
+  var page = e.parameter.page || 'organizacao';
+
+  // Verifica se o usuário logado está autorizado
+  var emailAtual = Session.getActiveUser().getEmail().toLowerCase();
+  var autorizado = EMAILS_AUTORIZADOS.some(function(em) {
+    return em.toLowerCase() === emailAtual;
+  });
+
+  if (!autorizado) {
+    return HtmlService.createHtmlOutput(
+      '<!DOCTYPE html><html><head><meta charset="UTF-8">' +
+      '<style>body{font-family:sans-serif;background:#0a0a0f;color:#f0efff;display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0;flex-direction:column;gap:12px}' +
+      '.box{background:#141420;border:1.5px solid #ff4444;border-radius:16px;padding:32px 28px;text-align:center;max-width:360px}' +
+      'h2{color:#ff4444;margin:0 0 8px}p{color:#8886aa;font-size:14px;margin:0}</style></head>' +
+      '<body><div class="box"><h2>🚫 Acesso negado</h2>' +
+      '<p>Sua conta <strong>' + emailAtual + '</strong> não tem permissão para acessar este painel.</p>' +
+      '<p style="margin-top:12px">Entre em contato com o administrador.</p></div></body></html>'
+    ).setTitle('Acesso Negado');
+  }
+
+  // Injeta API_URL e senha via template — nunca ficam expostos no HTML
+  var apiUrl   = ScriptApp.getService().getUrl();
+
+  if (page === 'organizacao') {
+    var tpl = HtmlService.createTemplateFromFile('organizacao');
+    tpl.apiUrl   = apiUrl;
+    tpl.senhaOrg = SENHA_ORGANIZADOR;
+    return tpl.evaluate()
+      .setTitle('Organização — Quermesse 2026')
+      .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
+  }
+
+  if (page === 'consulta') {
+    var tpl = HtmlService.createTemplateFromFile('consulta');
+    tpl.apiUrl   = apiUrl;
+    tpl.senhaOrg = SENHA_ORGANIZADOR;
+    return tpl.evaluate()
+      .setTitle('Consulta de Ingressos — Quermesse 2026')
+      .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
+  }
+
+  return HtmlService.createHtmlOutput('<p>Página não encontrada.</p>');
 }
 
 // ── Comprar ingresso (suporta multiplos) ─────────────────────
@@ -49,6 +99,7 @@ function comprarIngresso(data) {
   }
 
   var ids          = [];
+  var txn          = gerarTXN();           // ID único da transação (grupo)
   var valorUnitario = parseFloat(data.valor) / quantidade;
 
   for (var i = 0; i < quantidade; i++) {
@@ -65,12 +116,13 @@ function comprarIngresso(data) {
       Utilities.formatDate(agora, 'America/Sao_Paulo', 'dd/MM/yyyy HH:mm'), // col H - Data Compra
       '',                    // col I - Data Uso
       data.email || '',      // col J - E-mail
-      quantidade > 1 ? (i+1) + '/' + quantidade : '' // col K - Seq/Obs
+      (i+1) + '/' + quantidade, // col K - Seq
+      txn                    // col L - TXN (grupo da transação)
     ];
     sheet.appendRow(linha);
   }
 
-  return { ok: true, ids: ids, nome: data.nome, tipo: data.tipo, quantidade: quantidade, total: data.valor };
+  return { ok: true, ids: ids, txn: txn, nome: data.nome, tipo: data.tipo, quantidade: quantidade, total: data.valor };
 }
 
 // ── Validar ingresso (porteiro) ──────────────────────────────
@@ -126,7 +178,8 @@ function listarIngressos(data) {
       dataCompra:linhas[i][7],
       dataUso:   linhas[i][8],
       email:     linhas[i][9] || '',
-      obs:       linhas[i][10] || ''
+      seq:       linhas[i][10] || '',
+      txn:       linhas[i][11] || ''
     });
   }
   lista.reverse();
@@ -312,6 +365,134 @@ function getDashboard(data) {
   return { ok: true, total: total, pendentes: pendentes, ativos: ativos, usados: usados, cancelados: cancelados };
 }
 
+
+// ── Aprovar grupo inteiro pela TXN ───────────────────────────
+function aprovarGrupo(data) {
+  if (data.senha !== SENHA_ORGANIZADOR) return { ok: false, erro: 'Senha incorreta' };
+  var sheet  = getSheet();
+  var linhas = sheet.getDataRange().getValues();
+  var grupo  = [];
+
+  // Coleta todos os ingressos do grupo
+  for (var i = 1; i < linhas.length; i++) {
+    if (linhas[i][11] === data.txn) {
+      grupo.push({
+        rowIdx:    i,
+        id:        linhas[i][0],
+        nome:      linhas[i][1],
+        contato:   linhas[i][2],
+        tipo:      linhas[i][3],
+        valor:     linhas[i][5],
+        status:    linhas[i][6],
+        dataCompra:linhas[i][7],
+        email:     linhas[i][9] || '',
+        seq:       linhas[i][10] || '',
+        txn:       linhas[i][11] || ''
+      });
+    }
+  }
+
+  if (grupo.length === 0) return { ok: false, erro: 'Nenhum ingresso encontrado para esta transação' };
+
+  var aprovados = 0;
+  var emailsEnviados = 0;
+
+  for (var j = 0; j < grupo.length; j++) {
+    var ing = grupo[j];
+    if (ing.status === 'ATIVO') continue; // já aprovado, pula
+    sheet.getRange(ing.rowIdx + 1, 7).setValue('ATIVO');
+    sheet.getRange(ing.rowIdx + 1, 11).setValue(ing.seq); // mantém seq
+    aprovados++;
+    // Envia e-mail individual para cada ingresso do grupo
+    if (ing.email) {
+      try { enviarEmailQRCode(ing); emailsEnviados++; } catch(e) {}
+    }
+  }
+
+  return {
+    ok: true,
+    txn: data.txn,
+    total: grupo.length,
+    aprovados: aprovados,
+    emailsEnviados: emailsEnviados,
+    grupo: grupo.map(function(i) { return { id: i.id, nome: i.nome, contato: i.contato, email: i.email, seq: i.seq }; })
+  };
+}
+
+// ── Buscar grupo por TXN ou ID ────────────────────────────────
+function buscarGrupo(data) {
+  if (data.senha !== SENHA_ORGANIZADOR) return { ok: false, erro: 'Senha incorreta' };
+  var sheet  = getSheet();
+  var linhas = sheet.getDataRange().getValues();
+  var grupo  = [];
+  var txnAlvo = data.txn || '';
+  var idAlvo  = data.id  || '';
+
+  // Se buscou por ID, acha a TXN dele primeiro
+  if (idAlvo && !txnAlvo) {
+    for (var i = 1; i < linhas.length; i++) {
+      if (linhas[i][0] === idAlvo) {
+        txnAlvo = linhas[i][11] || '';
+        break;
+      }
+    }
+  }
+
+  // Coleta o grupo
+  for (var i = 1; i < linhas.length; i++) {
+    if (!linhas[i][0]) continue;
+    var match = (txnAlvo && linhas[i][11] === txnAlvo) ||
+                (!txnAlvo && linhas[i][0] === idAlvo);
+    if (!match) continue;
+    grupo.push({
+      id:        linhas[i][0],
+      nome:      linhas[i][1],
+      contato:   linhas[i][2],
+      tipo:      linhas[i][3],
+      valor:     linhas[i][5],
+      status:    linhas[i][6],
+      dataCompra:linhas[i][7],
+      dataUso:   linhas[i][8],
+      email:     linhas[i][9] || '',
+      seq:       linhas[i][10] || '',
+      txn:       linhas[i][11] || ''
+    });
+  }
+
+  if (grupo.length === 0) return { ok: false, erro: 'Nenhum ingresso encontrado' };
+  return { ok: true, txn: txnAlvo, grupo: grupo };
+}
+
+// ── Reenviar QR Code por e-mail ───────────────────────────────
+function reenviarQR(data) {
+  if (data.senha !== SENHA_ORGANIZADOR) return { ok: false, erro: 'Senha incorreta' };
+  var sheet  = getSheet();
+  var linhas = sheet.getDataRange().getValues();
+
+  for (var i = 1; i < linhas.length; i++) {
+    if (linhas[i][0] === data.id) {
+      var email = linhas[i][9] || '';
+      if (!email) return { ok: false, erro: 'Este ingresso não tem e-mail cadastrado' };
+      var ingresso = {
+        id:        linhas[i][0],
+        nome:      linhas[i][1],
+        contato:   linhas[i][2],
+        tipo:      linhas[i][3],
+        valor:     linhas[i][5],
+        dataCompra:linhas[i][7],
+        email:     email
+      };
+      try {
+        enviarEmailQRCode(ingresso);
+        return { ok: true, email: email, nome: ingresso.nome };
+      } catch(e) {
+        return { ok: false, erro: 'Erro ao enviar: ' + e.message };
+      }
+    }
+  }
+  return { ok: false, erro: 'Ingresso não encontrado' };
+}
+
 // ── Helpers ──────────────────────────────────────────────────
 function getSheet() {
   return SpreadsheetApp.openById(SHEET_ID).getSheetByName(SHEET_NAME);
@@ -320,6 +501,13 @@ function getSheet() {
 function gerarID() {
   var chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
   var id = 'QRM-';
+  for (var i = 0; i < 8; i++) id += chars.charAt(Math.floor(Math.random() * chars.length));
+  return id;
+}
+
+function gerarTXN() {
+  var chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  var id = 'TXN-';
   for (var i = 0; i < 8; i++) id += chars.charAt(Math.floor(Math.random() * chars.length));
   return id;
 }
@@ -333,7 +521,7 @@ function configurarPlanilha() {
   var ss    = SpreadsheetApp.openById(SHEET_ID);
   var sheet = ss.getSheetByName(SHEET_NAME);
   if (!sheet) sheet = ss.insertSheet(SHEET_NAME);
-  var headers = ['ID','Nome','WhatsApp','Tipo','Pagamento','Valor','Status','Data Compra','Data Uso','E-mail','Seq/Obs'];
+  var headers = ['ID','Nome','WhatsApp','Tipo','Pagamento','Valor','Status','Data Compra','Data Uso','E-mail','Seq','TXN'];
   sheet.getRange(1,1,1,headers.length).setValues([headers])
     .setFontWeight('bold').setBackground('#0a3550').setFontColor('#ffffff');
   sheet.setFrozenRows(1);

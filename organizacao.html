@@ -261,9 +261,10 @@
 <body>
 
 <script>
+// CONFIG injetado pelo Apps Script — senha nunca fica exposta no HTML
 var CONFIG = {
-  API_URL: 'https://script.google.com/macros/s/AKfycbww_HOd7RF4G__2Vpfau-QpBs_V9YWUhM12A0N2XdQIpy6ZBcrjvWfAgxIAG2r3tFpXWw/exec',
-  SENHA: 'Org@2026'
+  API_URL: '<?= apiUrl ?>',
+  SENHA:   '<?= senhaOrg ?>'
 };
 </script>
 
@@ -552,6 +553,16 @@ var _filaWpp = [];
 var _filaIdx = 0;
 
 function mostrarConfirmacaoAprovacao(data, id) {
+  // Garante que contato é sempre string — pega do cache local se vier vazio do backend
+  if (!data.contato) {
+    var cached = todosIngressos.find(function(i) { return i.id === id; });
+    if (cached) {
+      data.contato = cached.contato || '';
+      data.nome    = data.nome  || cached.nome  || '';
+      data.email   = data.email || cached.email || '';
+    }
+  }
+  data.contato = '' + (data.contato || '');
   _filaWpp = [{ data: data, id: id }];
   _filaIdx = 0;
 
@@ -644,8 +655,8 @@ function dispararWpp() {
 function montarUrlWpp(data, id) {
   var nome    = data.nome    || 'Cliente';
   var email   = data.email   || '';
-  var contato = data.contato || '';
-  var num = String(contato || '').replace(/\D/g, '');
+  var contato = data.contato || data.whatsapp || data.telefone || '';
+  var num = ('' + contato).replace(/\D/g, '');
   if (!num) return null;
   if (num.length <= 11) num = '55' + num;
   var msg;

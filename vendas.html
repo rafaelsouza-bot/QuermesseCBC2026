@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>104ª Quermesse Solidária CBC — Ingressos</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
 <style>
   :root {
     --azul:       #29ABE2;
@@ -292,8 +292,6 @@
     <div class="pix-box">
       <div class="pix-label">Valor a pagar</div>
       <div class="pix-valor-destaque" id="modal-valor">R$ 5,00</div>
-      <div class="pix-label" style="margin-top:12px">QR Code PIX</div>
-      <div class="pix-qr"><div id="pix-qrcode"></div></div>
       <div class="pix-label">Chave PIX</div>
       <div class="pix-chave-box">
         <span id="modal-chave">51985998118</span>
@@ -324,7 +322,7 @@ var CONFIG = {
   EVENTO: '104ª Quermesse Solidária CBC',
   MAX_INGRESSOS: 20,
   VALOR: 5.00,
-  API_URL: 'https://script.google.com/macros/s/AKfycbzVw7RNgO3gPRLW2BGzSUrs59MQHWz-QRtIZIxJyB6RjMs0LzOH2CLw5Pz-RYgK7tKexQ/exec', // Altere para sua URL
+  API_URL: 'https://script.google.com/macros/s/AKfycbz73VW1m00lkH36l42d4PyuxLmIVIaK8Kh_4JN_IYirjZMnpNglNiinuIS4o1_ARCxaPQ/exec', // Altere para sua URL
   PIX_CHAVE: '51985998118', // CPF, Email ou Chave aleatória
   PIX_NOME: 'Colegio Bom Conselho',
   PIX_CIDADE: 'Porto Alegre'
@@ -395,18 +393,6 @@ function abrirModal() {
   document.getElementById('modal-chave').textContent = CONFIG.PIX_CHAVE;
   document.getElementById('modal-nome-pix').textContent = CONFIG.PIX_NOME;
 
-  // QR Code PIX (formato simples com chave e valor)
-  var pixPayload = gerarPixPayload(CONFIG.PIX_CHAVE, CONFIG.PIX_NOME, CONFIG.PIX_CIDADE, pedidoAtual.total);
-  document.getElementById('pix-qrcode').innerHTML = '';
-  new QRCode(document.getElementById('pix-qrcode'), {
-    text: pixPayload,
-    width: 200,
-    height: 200,
-    colorDark: "#000000",
-    colorLight: "#ffffff",
-    correctLevel: QRCode.CorrectLevel.L
-});
-
   // Info do pedido
   var ids = pedidoAtual.ids.join(', ');
   var txnInfo = pedidoAtual.txn
@@ -425,6 +411,28 @@ function abrirModal() {
 
 function fecharModal() {
   document.getElementById('overlay').classList.remove('aberto');
+
+  if (pedidoAtual) {
+    // Mostra mensagem de confirmação
+    mostrarToast('✅ Aguarde a confirmação da organização!');
+
+    // Bloqueia o formulário
+    var btn = document.getElementById('btn-comprar');
+    btn.disabled = true;
+    btn.querySelector('.texto').textContent = '✅ Pedido enviado!';
+
+    document.getElementById('nome').disabled = true;
+    document.getElementById('whatsapp').disabled = true;
+    document.getElementById('email').disabled = true;
+
+    // Mostra aviso fixo abaixo do botão
+    var aviso = document.createElement('div');
+    aviso.style.cssText = 'margin-top:16px;background:#0a2a10;border:1.5px solid #00c97a;border-radius:10px;padding:14px 16px;font-size:14px;color:#6effa8;line-height:1.6;text-align:center';
+    aviso.innerHTML = '✅ <strong>Pedido registrado com sucesso!</strong><br>Aguarde a confirmação da organização.<br>Seu ingresso será enviado pelo WhatsApp assim que o pagamento for confirmado.';
+    btn.parentNode.insertBefore(aviso, btn.nextSibling);
+
+    pedidoAtual = null;
+  }
 }
 
 function copiarChave() {
@@ -444,39 +452,16 @@ function avisarWhatsApp() {
     '💰 Valor: R$ ' + total + '\n' +
     '🔑 IDs: ' + ids + '\n\n' +
     'Aguardo a confirmação! 😊';
-  var num = pedidoAtual.whatsapp.replace(/\D/g,'');
-  if (num.length <= 11) num = '55' + num;
-  window.location.href = 'https://wa.me/' + num + '?text=' + encodeURIComponent(msg);
+  window.location.href = 'https://wa.me/5551986291157?text=' + encodeURIComponent(msg);
 }
 
 function mostrarToast(msg) {
   var t = document.getElementById('toast');
   t.textContent = msg; t.classList.add('show');
-  setTimeout(function() { t.classList.remove('show'); }, 2500);
+  setTimeout(function() { t.classList.remove('show'); }, 4000);
 }
 
-// Gerador PIX Copia e Cola (padrão BR Code - versão compacta)
-function gerarPixPayload(chave, nome, cidade, valor) {
-  function c(id, val) {
-    var l = val.length.toString().padStart(2, '0');
-    return id + l + val;
-  }
-  var n = nome.substring(0, 10).trim();
-  var d = cidade.substring(0, 8).trim();
-  var m = c('00', 'BR.GOV.BCB.PIX') + c('01', chave);
-  var p = c('00', '01') + c('26', m) + c('52', '0000') + c('53', '986') + c('54', valor.toFixed(2)) + c('58', 'BR') + c('59', n) + c('60', d) + '6304';
-  return p + crc16(p);
-}
 
-function crc16(s) {
-  var c = 0xFFFF, i, j;
-  for (i = 0; i < s.length; i++) {
-    c ^= s.charCodeAt(i) << 8;
-    for (j = 0; j < 8; j++)
-      c = (c & 0x8000) ? (c << 1) ^ 0x1021 : c << 1;
-  }
-  return ((c & 0xFFFF).toString(16).toUpperCase().padStart(4, '0'));
-}
 </script>
 </body>
 </html>

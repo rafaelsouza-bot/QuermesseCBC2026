@@ -276,7 +276,7 @@
     ⚡ O pagamento é realizado via <strong style="color:var(--azul)">PIX</strong>. Após confirmar o pedido, você receberá o QR Code PIX para pagamento. Seu ingresso só será liberado após a confirmação pela organização.
   </div>
 
-  <button class="btn-comprar" id="btn-comprar" onclick="comprar()">
+  <button class="btn-comprar" id="btn-comprar">
     <span class="texto">🎟️ Confirmar pedido</span>
     <span class="spinner">⏳ Aguarde...</span>
   </button>
@@ -297,7 +297,7 @@
       <div class="pix-label">Chave PIX</div>
       <div class="pix-chave-box">
         <span id="modal-chave">51985998118</span>
-        <button class="btn-copiar" onclick="copiarChave()">Copiar</button>
+        <button class="btn-copiar" id="btn-copiar">Copiar</button>
       </div>
       <div class="pix-nome" id="modal-nome-pix">Colégio Bom Conselho</div>
     </div>
@@ -310,8 +310,8 @@
     <div class="pedido-info" id="pedido-info"></div>
 
     <div class="btns-modal">
-      <button class="btn-wpp" onclick="avisarWhatsApp()">📱 Avisar que paguei no WhatsApp</button>
-      <button class="btn-fechar" onclick="fecharModal()">Fechar</button>
+      <button class="btn-wpp" id="btn-wpp">📱 Avisar que paguei no WhatsApp</button>
+      <button class="btn-fechar" id="btn-fechar">Fechar</button>
     </div>
   </div>
 </div>
@@ -324,8 +324,7 @@ var CONFIG = {
   EVENTO: '104ª Quermesse Solidária CBC',
   MAX_INGRESSOS: 20,
   VALOR: 5.00,
-  API_URL: 'https://script.google.com/macros/s/AKfycbww_HOd7RF4G__2Vpfau-QpBs_V9YWUhM12A0N2XdQIpy6ZBcrjvWfAgxIAG2r3tFpXWw/exec
-    ', // Altere para sua URL
+  API_URL: 'https://script.google.com/macros/s/AKfycbzVw7RNgO3gPRLW2BGzSUrs59MQHWz-QRtIZIxJyB6RjMs0LzOH2CLw5Pz-RYgK7tKexQ/exec', // Altere para sua URL
   PIX_CHAVE: '51985998118', // CPF, Email ou Chave aleatória
   PIX_NOME: 'Colegio Bom Conselho',
   PIX_CIDADE: 'Porto Alegre'
@@ -336,7 +335,12 @@ var qtd = 1;
 var pedidoAtual = null;
 
 // Init
-window.onload = function() {};
+window.onload = function() {
+  document.getElementById('btn-comprar').addEventListener('click', comprar);
+  document.getElementById('btn-copiar').addEventListener('click', copiarChave);
+  document.getElementById('btn-wpp').addEventListener('click', avisarWhatsApp);
+  document.getElementById('btn-fechar').addEventListener('click', fecharModal);
+};
 
 // Quantidade
 function mudarQtd(delta) {
@@ -375,7 +379,7 @@ async function comprar() {
     });
     var data = await res.json();
     if (!data.ok) throw new Error(data.erro || 'Erro ao registrar pedido');
-    pedidoAtual = { ids: data.ids, nome: nome, whatsapp: whatsapp, email: email, qtd: qtd, total: CONFIG.VALOR * qtd };
+    pedidoAtual = { ids: data.ids, txn: data.txn, nome: nome, whatsapp: whatsapp, email: email, qtd: qtd, total: CONFIG.VALOR * qtd };
     abrirModal();
   } catch(err) {
     alert('Erro: ' + err.message);
@@ -405,9 +409,13 @@ function abrirModal() {
 
   // Info do pedido
   var ids = pedidoAtual.ids.join(', ');
+  var txnInfo = pedidoAtual.txn
+    ? '<div><span class="k">Nº da compra</span><span class="v" style="font-size:11px;font-family:monospace;color:var(--roxo)">' + pedidoAtual.txn + '</span></div>'
+    : '';
   document.getElementById('pedido-info').innerHTML =
     '<div><span class="k">Nome</span><span class="v">' + pedidoAtual.nome + '</span></div>' +
     '<div><span class="k">Ingressos</span><span class="v">' + pedidoAtual.qtd + 'x</span></div>' +
+    txnInfo +
     '<div><span class="k">IDs</span><span class="v" style="font-size:11px;font-family:monospace">' + ids + '</span></div>' +
     '<div><span class="k">E-mail QR Code</span><span class="v" style="font-size:12px">' + pedidoAtual.email + '</span></div>' +
     '<div><span class="k">Total</span><span class="v" style="color:var(--azul)">R$ ' + total + '</span></div>';

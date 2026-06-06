@@ -22,7 +22,6 @@
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { background: var(--bg); color: var(--texto); font-family: 'Segoe UI', sans-serif; min-height: 100vh; }
 
-  /* Hero */
   .hero {
     background: linear-gradient(160deg, #0a3550 0%, #06202e 60%, #061a26 100%);
     padding: 36px 20px 32px;
@@ -47,179 +46,72 @@
   .banner-isencao .txt { font-size: 30px; line-height: 1.7; }
   .banner-isencao .txt strong { color: var(--azul); font-size: 40px; }
 
-  /* Container */
   .container { max-width: 480px; margin: 0 auto; padding: 24px 16px 80px; }
-
-  /* Section title */
   .section-title { font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: var(--texto2); margin-bottom: 10px; }
 
-  /* Quantidade */
   .qtd-wrap {
-    background: var(--card);
-    border: 1.5px solid var(--borda);
-    border-radius: 12px;
-    padding: 18px 20px;
-    display: flex; align-items: center; justify-content: space-between;
-    margin-bottom: 24px;
+    background: var(--card); border: 1.5px solid var(--borda); border-radius: 12px;
+    padding: 18px 20px; display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px;
   }
   .qtd-info .nome { font-size: 18px; font-weight: 800; }
   .qtd-info .preco { font-size: 14px; color: var(--azul); margin-top: 2px; }
   .qtd-info .preco span { font-size: 22px; font-weight: 900; }
   .qtd-controle { display: flex; align-items: center; gap: 14px; }
-  .qtd-btn {
-    width: 40px; height: 40px;
-    background: var(--azul-dark); color: #fff;
-    border: none; border-radius: 50%;
-    font-size: 22px; font-weight: 700;
-    cursor: pointer; display: flex; align-items: center; justify-content: center;
-    transition: background .2s;
-  }
+  .qtd-btn { width: 40px; height: 40px; background: var(--azul-dark); color: #fff; border: none; border-radius: 50%; font-size: 22px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background .2s; }
   .qtd-btn:hover { background: var(--azul); }
   .qtd-num { font-size: 28px; font-weight: 900; min-width: 32px; text-align: center; }
 
-  /* Resumo valor */
-  .resumo-valor {
-    background: var(--card2);
-    border: 1px solid var(--borda);
-    border-radius: 10px;
-    padding: 12px 16px;
-    display: flex; justify-content: space-between; align-items: center;
-    margin-bottom: 20px;
-    font-size: 14px; color: var(--texto2);
-  }
+  .resumo-valor { background: var(--card2); border: 1px solid var(--borda); border-radius: 10px; padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; font-size: 14px; color: var(--texto2); }
   .resumo-valor .total { font-size: 22px; font-weight: 900; color: var(--azul); }
 
-  /* Form */
   .form-group { margin-bottom: 14px; }
   label { display: block; font-size: 11px; color: var(--texto2); margin-bottom: 5px; letter-spacing: .5px; text-transform: uppercase; }
-  input {
-    width: 100%;
-    background: var(--card); border: 1.5px solid var(--borda);
-    border-radius: 8px; padding: 13px 16px;
-    color: var(--texto); font-size: 15px; outline: none;
-    transition: border-color .2s;
-  }
+  input { width: 100%; background: var(--card); border: 1.5px solid var(--borda); border-radius: 8px; padding: 13px 16px; color: var(--texto); font-size: 15px; outline: none; transition: border-color .2s; }
   input:focus { border-color: var(--azul); }
   input::placeholder { color: var(--texto2); opacity: .6; }
 
-  /* Botão */
-  .btn-comprar {
-    width: 100%;
-    background: linear-gradient(135deg, var(--azul), var(--azul-dark));
-    color: #fff; border: none; border-radius: 12px;
-    padding: 18px; font-size: 17px; font-weight: 800;
-    cursor: pointer; transition: opacity .2s;
-    letter-spacing: .5px; margin-top: 8px;
-    box-shadow: 0 4px 20px rgba(41,171,226,.3);
-  }
+  .btn-comprar { width: 100%; background: linear-gradient(135deg, var(--azul), var(--azul-dark)); color: #fff; border: none; border-radius: 12px; padding: 18px; font-size: 17px; font-weight: 800; cursor: pointer; transition: opacity .2s; letter-spacing: .5px; margin-top: 8px; box-shadow: 0 4px 20px rgba(41,171,226,.3); }
   .btn-comprar:hover { opacity: .9; }
   .btn-comprar:disabled { opacity: .5; cursor: not-allowed; }
   .btn-comprar .spinner { display: none; }
   .btn-comprar.loading .texto { display: none; }
   .btn-comprar.loading .spinner { display: inline; }
 
-  /* Overlay / Modal */
-  .overlay {
-    position: fixed; inset: 0;
-    background: rgba(0,0,0,.88);
-    z-index: 100; display: none;
-    align-items: center; justify-content: center;
-    padding: 16px; overflow-y: auto;
-  }
+  .overlay { position: fixed; inset: 0; background: rgba(0,0,0,.88); z-index: 100; display: none; align-items: center; justify-content: center; padding: 16px; overflow-y: auto; }
   .overlay.aberto { display: flex; }
-  .modal {
-    background: var(--card);
-    border: 1.5px solid var(--azul);
-    border-radius: 20px;
-    padding: 28px 22px;
-    max-width: 400px; width: 100%;
-    text-align: center;
-    animation: slideUp .3s ease;
-    margin: auto;
-  }
+  .modal { background: var(--card); border: 1.5px solid var(--azul); border-radius: 20px; padding: 28px 22px; max-width: 400px; width: 100%; text-align: center; animation: slideUp .3s ease; margin: auto; }
   @keyframes slideUp { from { transform: translateY(30px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
 
-  /* Modal pedido recebido */
   .modal-icon { font-size: 52px; margin-bottom: 10px; }
   .modal-titulo { font-size: 22px; font-weight: 900; margin-bottom: 4px; }
   .modal-sub { font-size: 13px; color: var(--texto2); margin-bottom: 20px; }
 
-  /* PIX info */
-  .pix-box {
-    background: var(--card2);
-    border: 1.5px solid var(--azul);
-    border-radius: 14px;
-    padding: 20px;
-    margin-bottom: 18px;
-  }
+  .pix-box { background: var(--card2); border: 1.5px solid var(--azul); border-radius: 14px; padding: 20px; margin-bottom: 18px; }
   .pix-box .pix-label { font-size: 11px; color: var(--texto2); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 8px; }
-  .pix-qr { display: inline-block; background: #fff; border-radius: 10px; padding: 12px; margin-bottom: 14px; }
   .pix-valor-destaque { font-size: 32px; font-weight: 900; color: var(--azul); margin-bottom: 4px; }
-  .pix-chave-box {
-    background: var(--card);
-    border-radius: 8px; padding: 10px 14px;
-    font-size: 16px; font-weight: 700;
-    letter-spacing: 1px; margin-bottom: 10px;
-    display: flex; align-items: center; justify-content: space-between; gap: 8px;
-  }
-  .btn-copiar {
-    background: var(--azul); color: #fff;
-    border: none; border-radius: 6px;
-    padding: 6px 12px; font-size: 12px; font-weight: 700;
-    cursor: pointer; white-space: nowrap;
-  }
+  .pix-chave-box { background: var(--card); border-radius: 8px; padding: 10px 14px; font-size: 11px; font-weight: 700; letter-spacing: 0px; margin-bottom: 10px; display: flex; align-items: center; justify-content: space-between; gap: 8px; word-break: break-all; }
+  .btn-copiar { background: var(--azul); color: #fff; border: none; border-radius: 6px; padding: 6px 12px; font-size: 12px; font-weight: 700; cursor: pointer; white-space: nowrap; flex-shrink: 0; }
   .pix-nome { font-size: 12px; color: var(--texto2); }
 
-  /* Aviso aguardar */
-  .aviso-aguardar {
-    background: #0a2a10;
-    border: 1.5px solid #00c97a;
-    border-radius: 10px; padding: 12px 16px;
-    font-size: 13px; color: #6effa8;
-    margin-bottom: 18px; line-height: 1.5;
-  }
+  .aviso-aguardar { background: #0a2a10; border: 1.5px solid #00c97a; border-radius: 10px; padding: 12px 16px; font-size: 13px; color: #6effa8; margin-bottom: 18px; line-height: 1.5; }
 
-  /* Pedido info */
-  .pedido-info {
-    background: var(--card2);
-    border-radius: 10px; padding: 14px;
-    margin-bottom: 18px; text-align: left;
-  }
+  .pedido-info { background: var(--card2); border-radius: 10px; padding: 14px; margin-bottom: 18px; text-align: left; }
   .pedido-info div { display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 6px; }
   .pedido-info div:last-child { margin-bottom: 0; }
   .pedido-info .k { color: var(--texto2); }
   .pedido-info .v { font-weight: 700; }
 
-  /* Botões modal */
   .btns-modal { display: grid; gap: 10px; }
-  .btn-wpp {
-    background: #25d366; color: #fff; border: none;
-    border-radius: 10px; padding: 14px; font-size: 15px; font-weight: 700;
-    cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;
-  }
-  .btn-fechar {
-    background: transparent; border: 1.5px solid var(--borda);
-    color: var(--texto); border-radius: 10px; padding: 14px;
-    font-size: 15px; font-weight: 700; cursor: pointer;
-  }
+  .btn-wpp { background: #25d366; color: #fff; border: none; border-radius: 10px; padding: 14px; font-size: 15px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; }
+  .btn-fechar { background: transparent; border: 1.5px solid var(--borda); color: var(--texto); border-radius: 10px; padding: 14px; font-size: 15px; font-weight: 700; cursor: pointer; }
   .btn-fechar:hover { border-color: var(--azul); }
 
-  /* Toast */
-  .toast {
-    position: fixed; bottom: 24px; left: 50%;
-    transform: translateX(-50%) translateY(120px);
-    background: #0a2a10; border: 1.5px solid #00c97a;
-    color: #6effa8; padding: 14px 20px;
-    border-radius: 10px; font-size: 14px;
-    transition: transform .3s;
-    z-index: 200; white-space: nowrap;
-  }
+  .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(120px); background: #0a2a10; border: 1.5px solid #00c97a; color: #6effa8; padding: 14px 20px; border-radius: 10px; font-size: 14px; transition: transform .3s; z-index: 200; white-space: nowrap; }
   .toast.show { transform: translateX(-50%) translateY(0); }
 </style>
 </head>
 <body>
 
-<!-- Hero -->
 <div class="hero">
   <div class="hero-badge">🎡 104ª QUERMESSE</div>
   <h1>104ª Quermesse<br><span>Solidária CBC</span></h1>
@@ -230,13 +122,11 @@
   </div>
 </div>
 
-<!-- Banner isenção -->
 <div class="banner-isencao">
   <span class="icon">👶</span>
   <span class="txt"><strong>Crianças até 3 anos</strong> têm entrada isenta!</span>
 </div>
 
-<!-- Form -->
 <div class="container">
   <div class="section-title">Quantidade de ingressos</div>
   <div class="qtd-wrap">
@@ -256,7 +146,6 @@
     <span class="total" id="res-total">R$ 5,00</span>
   </div>
 
-  <!-- Dados -->
   <div class="section-title" style="margin-top:4px">Dados do Pagador</div>
   <div class="form-group">
     <label>Nome completo</label>
@@ -271,7 +160,6 @@
     <input type="email" id="email" placeholder="seu@email.com">
   </div>
 
-  <!-- PIX info -->
   <div style="background:var(--card2);border:1px solid var(--borda);border-radius:10px;padding:14px 16px;margin-bottom:20px;font-size:13px;color:var(--texto2);line-height:1.6">
     ⚡ O pagamento é realizado via <strong style="color:var(--azul)">PIX</strong>. Após confirmar o pedido, você receberá a Chave PIX para pagamento. Seu ingresso só será liberado após a confirmação pela organização.
   </div>
@@ -282,19 +170,18 @@
   </button>
 </div>
 
-<!-- Modal PIX -->
 <div class="overlay" id="overlay">
   <div class="modal">
     <div class="modal-icon">⚡</div>
     <div class="modal-titulo">Pague via PIX</div>
-    <div class="modal-sub">Clique em copiar e copie a chave</div>
+    <div class="modal-sub">Clique em copiar — valor já incluído!</div>
 
     <div class="pix-box">
       <div class="pix-label">Valor a pagar</div>
       <div class="pix-valor-destaque" id="modal-valor">R$ 5,00</div>
-      <div class="pix-label">Chave PIX</div>
+      <div class="pix-label">PIX Copia e Cola</div>
       <div class="pix-chave-box">
-        <span id="modal-chave">51985998118</span>
+        <span id="modal-chave"></span>
         <button class="btn-copiar" id="btn-copiar">Copiar</button>
       </div>
       <div class="pix-nome" id="modal-nome-pix">Colégio Bom Conselho</div>
@@ -317,22 +204,19 @@
 <div class="toast" id="toast"></div>
 
 <script>
-// ===== CONFIGURAÇÃO (EDITE AQUI) =====
 var CONFIG = {
   EVENTO: '104ª Quermesse Solidária CBC',
   MAX_INGRESSOS: 20,
   VALOR: 5.00,
-  API_URL: 'https://script.google.com/macros/s/AKfycbyqyDwxqIXCLyJO1wKn2YdkLCq4vBHQOtBjWBssaaRmN6nJU-Zb6OE-CTsxiBe71W4fHw/exec', // Altere para sua URL
-  PIX_CHAVE: '51985998118', // CPF, Email ou Chave aleatória
+  API_URL: 'https://script.google.com/macros/s/AKfycbyqyDwxqIXCLyJO1wKn2YdkLCq4vBHQOtBjWBssaaRmN6nJU-Zb6OE-CTsxiBe71W4fHw/exec',
+  PIX_CHAVE: '51985998118',
   PIX_NOME: 'Colegio Bom Conselho',
   PIX_CIDADE: 'Porto Alegre'
 };
-// =====================================
 
 var qtd = 1;
 var pedidoAtual = null;
 
-// Init
 window.onload = function() {
   document.getElementById('btn-comprar').addEventListener('click', comprar);
   document.getElementById('btn-copiar').addEventListener('click', copiarChave);
@@ -340,7 +224,6 @@ window.onload = function() {
   document.getElementById('btn-fechar').addEventListener('click', fecharModal);
 };
 
-// Quantidade
 function mudarQtd(delta) {
   qtd = Math.max(1, Math.min(CONFIG.MAX_INGRESSOS, qtd + delta));
   document.getElementById('qtd-num').textContent = qtd;
@@ -349,7 +232,6 @@ function mudarQtd(delta) {
   document.getElementById('res-total').textContent = 'R$ ' + total;
 }
 
-// Comprar
 async function comprar() {
   var nome     = document.getElementById('nome').value.trim();
   var whatsapp = document.getElementById('whatsapp').value.trim();
@@ -365,14 +247,8 @@ async function comprar() {
     var res = await fetch(CONFIG.API_URL, {
       method: 'POST',
       body: JSON.stringify({
-        acao: 'comprar',
-        nome: nome,
-        contato: whatsapp,
-        email: email,
-        tipo: 'Ingresso',
-        pagamento: 'PIX',
-        valor: CONFIG.VALOR * qtd,
-        quantidade: qtd
+        acao: 'comprar', nome: nome, contato: whatsapp, email: email,
+        tipo: 'Ingresso', pagamento: 'PIX', valor: CONFIG.VALOR * qtd, quantidade: qtd
       })
     });
     var data = await res.json();
@@ -386,17 +262,19 @@ async function comprar() {
   }
 }
 
-// Modal PIX
 function abrirModal() {
-  var total = (pedidoAtual.total).toFixed(2).replace('.',',');
+  var total = pedidoAtual.total.toFixed(2).replace('.', ',');
   document.getElementById('modal-valor').textContent = 'R$ ' + total;
-  document.getElementById('modal-chave').textContent = CONFIG.PIX_CHAVE;
   document.getElementById('modal-nome-pix').textContent = CONFIG.PIX_NOME;
 
-  // Info do pedido
+  // Gera payload PIX com valor e TXN embutidos
+  var txnRef = (pedidoAtual.txn || '').replace(/[^a-zA-Z0-9]/g, '').substring(0, 25) || 'QUERMESSE';
+  var pixPayload = gerarPixPayload(CONFIG.PIX_CHAVE, CONFIG.PIX_NOME, CONFIG.PIX_CIDADE, pedidoAtual.total, txnRef);
+  document.getElementById('modal-chave').textContent = pixPayload;
+
   var ids = pedidoAtual.ids.join(', ');
   var txnInfo = pedidoAtual.txn
-    ? '<div><span class="k">Nº da compra</span><span class="v" style="font-size:11px;font-family:monospace;color:var(--roxo)">' + pedidoAtual.txn + '</span></div>'
+    ? '<div><span class="k">Nº da compra</span><span class="v" style="font-size:11px;font-family:monospace">' + pedidoAtual.txn + '</span></div>'
     : '';
   document.getElementById('pedido-info').innerHTML =
     '<div><span class="k">Nome</span><span class="v">' + pedidoAtual.nome + '</span></div>' +
@@ -413,10 +291,8 @@ function fecharModal() {
   document.getElementById('overlay').classList.remove('aberto');
 
   if (pedidoAtual) {
-    // Mostra mensagem de confirmação
     mostrarToast('✅ Aguarde a confirmação da organização!');
 
-    // Bloqueia o formulário
     var btn = document.getElementById('btn-comprar');
     btn.disabled = true;
     btn.querySelector('.texto').textContent = '✅ Pedido enviado!';
@@ -425,7 +301,6 @@ function fecharModal() {
     document.getElementById('whatsapp').disabled = true;
     document.getElementById('email').disabled = true;
 
-    // Mostra aviso fixo abaixo do botão
     var aviso = document.createElement('div');
     aviso.style.cssText = 'margin-top:16px;background:#0a2a10;border:1.5px solid #00c97a;border-radius:10px;padding:14px 16px;font-size:14px;color:#6effa8;line-height:1.6;text-align:center';
     aviso.innerHTML = '✅ <strong>Pedido registrado com sucesso!</strong><br>Aguarde a confirmação da organização.<br>Seu ingresso será enviado para o e-mail cadastrado assim que o pagamento for confirmado.';
@@ -436,14 +311,15 @@ function fecharModal() {
 }
 
 function copiarChave() {
-  navigator.clipboard.writeText(CONFIG.PIX_CHAVE).then(function() {
-    mostrarToast('✅ Chave PIX copiada!');
+  var payload = document.getElementById('modal-chave').textContent;
+  navigator.clipboard.writeText(payload).then(function() {
+    mostrarToast('✅ PIX copiado com valor incluído!');
   });
 }
 
 function avisarWhatsApp() {
   if (!pedidoAtual) return;
-  var total = pedidoAtual.total.toFixed(2).replace('.',',');
+  var total = pedidoAtual.total.toFixed(2).replace('.', ',');
   var ids = pedidoAtual.ids.join(', ');
   var msg = '🎡 *' + CONFIG.EVENTO + '*\n\n' +
     'Olá! Acabei de realizar o pagamento via PIX.\n\n' +
@@ -462,7 +338,38 @@ function mostrarToast(msg) {
   setTimeout(function() { t.classList.remove('show'); }, 4000);
 }
 
+// Gerador PIX Copia e Cola (padrão BR Code)
+function gerarPixPayload(chave, nome, cidade, valor, txnId) {
+  function c(id, val) {
+    var l = val.length.toString().padStart(2, '0');
+    return id + l + val;
+  }
+  var n = nome.substring(0, 25).trim();
+  var d = cidade.substring(0, 15).trim();
+  var t = (txnId || '***').substring(0, 25);
+  var m = c('00', 'BR.GOV.BCB.PIX') + c('01', chave);
+  var p = c('00', '01') +
+          c('26', m) +
+          c('52', '0000') +
+          c('53', '986') +
+          c('54', valor.toFixed(2)) +
+          c('58', 'BR') +
+          c('59', n) +
+          c('60', d) +
+          c('62', c('05', t)) +
+          '6304';
+  return p + crc16(p);
+}
 
+function crc16(s) {
+  var c = 0xFFFF, i, j;
+  for (i = 0; i < s.length; i++) {
+    c ^= s.charCodeAt(i) << 8;
+    for (j = 0; j < 8; j++)
+      c = (c & 0x8000) ? (c << 1) ^ 0x1021 : c << 1;
+  }
+  return ((c & 0xFFFF).toString(16).toUpperCase().padStart(4, '0'));
+}
 </script>
 </body>
 </html>

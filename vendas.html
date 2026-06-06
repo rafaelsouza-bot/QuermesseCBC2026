@@ -253,7 +253,7 @@
 
   <div class="resumo-valor">
     <span>Total (<span id="res-qtd">1</span> ingresso)</span>
-    <span class="total" id="res-total">R$ 5,00</span>
+    <span class="total" id="res-total">R$ 0,05</span>
   </div>
 
   <!-- Dados -->
@@ -302,7 +302,7 @@
 
     <div class="aviso-aguardar">
       ✅ Após pagar, aguarde a confirmação da organização.<br>
-      Seu ingresso será liberado pelo e-mail informado e você receberá orientações pelo WhatsApp.
+      Seu ingresso será liberado e você receberá pelo WhatsApp.
     </div>
 
     <div class="pedido-info" id="pedido-info"></div>
@@ -428,7 +428,7 @@ function fecharModal() {
     // Mostra aviso fixo abaixo do botão
     var aviso = document.createElement('div');
     aviso.style.cssText = 'margin-top:16px;background:#0a2a10;border:1.5px solid #00c97a;border-radius:10px;padding:14px 16px;font-size:14px;color:#6effa8;line-height:1.6;text-align:center';
-    aviso.innerHTML = '✅ <strong>Pedido registrado com sucesso!</strong><br>Aguarde a confirmação da organização.<br>Seu ingresso será enviado para o e-mail registrado assim que o pagamento for confirmado.';
+    aviso.innerHTML = '✅ <strong>Pedido registrado com sucesso!</strong><br>Aguarde a confirmação da organização.<br>Seu ingresso será enviado pelo WhatsApp assim que o pagamento for confirmado.';
     btn.parentNode.insertBefore(aviso, btn.nextSibling);
 
     pedidoAtual = null;
@@ -450,9 +450,10 @@ function avisarWhatsApp() {
     '👤 Nome: ' + pedidoAtual.nome + '\n' +
     '🎟️ Ingressos: ' + pedidoAtual.qtd + 'x\n' +
     '💰 Valor: R$ ' + total + '\n' +
+    (pedidoAtual.txn ? '🧾 Nº da compra: ' + pedidoAtual.txn + '\n' : '') +
     '🔑 IDs: ' + ids + '\n\n' +
     'Aguardo a confirmação! 😊';
-  window.location.href = 'https://wa.me/5551986291157?text=' + encodeURIComponent(msg);
+  window.open('https://wa.me/5551986291157?text=' + encodeURIComponent(msg), '_blank');
 }
 
 function mostrarToast(msg) {
